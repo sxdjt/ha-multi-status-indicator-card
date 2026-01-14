@@ -1,10 +1,10 @@
 # Multi Status Indicator Card
 
-A compact, configurable [Home Assistant](https://www.home-assistant.io/) custom card that displays multiple entity states as labeled icons in a flexible grid layout. Supports tap-to-toggle, state-based coloring, last-changed timestamps, and multiple entity types.
-
 ![GitHub Release](https://img.shields.io/github/v/release/sxdjt/ha-multi-status-indicator-card?style=for-the-badge)
 [![AI Assisted](https://img.shields.io/badge/AI-Claude%20Code-AAAAAA.svg?style=for-the-badge)](https://claude.ai/code)
 ![GitHub License](https://img.shields.io/github/license/sxdjt/ha-multi-status-indicator-card?style=for-the-badge)
+
+A compact, configurable [Home Assistant](https://www.home-assistant.io/) custom card that displays multiple entity states as labeled icons in a flexible grid layout. Supports tap-to-toggle, state-based coloring, last-changed timestamps, and multiple entity types.
 
 Yes, this is similar to the default HA [Glance card](https://www.home-assistant.io/dashboards/glance/), but I wanted something more compact.
 
