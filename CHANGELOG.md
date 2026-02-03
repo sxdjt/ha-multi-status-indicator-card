@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-02-03
+
+### Added
+- **Visual Editor**: Full GUI configuration without YAML
+  - Card Settings panel: title, columns, icon size, font size, colors, show last changed toggle
+  - Entities panel: add/remove entities with expansion panels for each
+  - Per-entity customization: entity picker, custom name, icon on/off, color on/off overrides
+  - Live preview updates as you configure
+
+### Changed
+- **Editor-friendly validation**: Card no longer throws errors during editing, shows placeholder message instead
+- **Graceful handling**: Invalid or incomplete configs display helpful "Add entities to display" message
+
+### Fixed
+- Card preview now renders correctly in the visual editor
+- Fixed crash when items array was undefined or empty
+
 ## [2.2.0] - 2025-11-26
 
 ### Performance

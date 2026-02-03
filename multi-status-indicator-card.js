@@ -6,10 +6,268 @@ window.customCards.push({
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c v2.2 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c v2.3 `,
   'color: green; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );
+
+// Visual Editor for Multi-Status Indicator Card
+class MultiStatusIndicatorCardEditor extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this._config = {};
+    this._hass = null;
+    this._rendered = false;
+  }
+
+  setConfig(config) {
+    this._config = { ...config };
+    if (!this._config.items) this._config.items = [];
+    // Only render once to preserve focus
+    if (!this._rendered) {
+      this.render();
+      this._rendered = true;
+    }
+  }
+
+  set hass(hass) {
+    this._hass = hass;
+    this.shadowRoot?.querySelectorAll('ha-selector').forEach(s => s.hass = hass);
+  }
+
+  _fire() {
+    this.dispatchEvent(new CustomEvent('config-changed', {
+      bubbles: true, composed: true,
+      detail: { config: this._config }
+    }));
+  }
+
+  _addEntity() {
+    this._config.items = [...this._config.items, { entity: '' }];
+    this._fire();
+    this._renderEntities();
+  }
+
+  _removeEntity(index) {
+    this._config.items = this._config.items.filter((_, i) => i !== index);
+    this._fire();
+    this._renderEntities();
+  }
+
+  _updateEntity(index, field, value) {
+    const items = [...this._config.items];
+    items[index] = { ...items[index], [field]: value || undefined };
+    // Clean up undefined values
+    Object.keys(items[index]).forEach(k => {
+      if (items[index][k] === undefined) delete items[index][k];
+    });
+    this._config.items = items;
+    this._fire();
+  }
+
+  _renderEntities() {
+    const list = this.shadowRoot?.getElementById('entities-list');
+    if (!list) return;
+    list.innerHTML = '';
+    this._config.items.forEach((item, index) => {
+      const panel = document.createElement('ha-expansion-panel');
+      panel.outlined = true;
+      panel.header = item.name || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+
+      const content = document.createElement('div');
+      content.className = 'panel-content';
+
+      // Entity picker
+      const entityDiv = document.createElement('div');
+      entityDiv.className = 'field';
+      const entityPicker = document.createElement('ha-selector');
+      entityPicker.hass = this._hass;
+      entityPicker.selector = { entity: {} };
+      entityPicker.value = item.entity || '';
+      entityPicker.label = 'Entity';
+      entityPicker.addEventListener('value-changed', (e) => {
+        this._updateEntity(index, 'entity', e.detail.value);
+        panel.header = this._hass?.states[e.detail.value]?.attributes?.friendly_name || e.detail.value || `Entity ${index + 1}`;
+      });
+      entityDiv.appendChild(entityPicker);
+      content.appendChild(entityDiv);
+
+      // Name override
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'field';
+      const nameField = document.createElement('ha-textfield');
+      nameField.label = 'Custom Name';
+      nameField.value = item.name || '';
+      nameField.addEventListener('input', (e) => {
+        this._updateEntity(index, 'name', e.target.value);
+        panel.header = e.target.value || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+      });
+      nameDiv.appendChild(nameField);
+      content.appendChild(nameDiv);
+
+      // Icon pickers row
+      const iconRow = document.createElement('div');
+      iconRow.className = 'row';
+
+      const iconOnDiv = document.createElement('div');
+      iconOnDiv.className = 'field';
+      const iconOnPicker = document.createElement('ha-selector');
+      iconOnPicker.hass = this._hass;
+      iconOnPicker.selector = { icon: {} };
+      iconOnPicker.value = item.icon_on || '';
+      iconOnPicker.label = 'Icon (On)';
+      iconOnPicker.addEventListener('value-changed', (e) => {
+        this._updateEntity(index, 'icon_on', e.detail.value);
+      });
+      iconOnDiv.appendChild(iconOnPicker);
+      iconRow.appendChild(iconOnDiv);
+
+      const iconOffDiv = document.createElement('div');
+      iconOffDiv.className = 'field';
+      const iconOffPicker = document.createElement('ha-selector');
+      iconOffPicker.hass = this._hass;
+      iconOffPicker.selector = { icon: {} };
+      iconOffPicker.value = item.icon_off || '';
+      iconOffPicker.label = 'Icon (Off)';
+      iconOffPicker.addEventListener('value-changed', (e) => {
+        this._updateEntity(index, 'icon_off', e.detail.value);
+      });
+      iconOffDiv.appendChild(iconOffPicker);
+      iconRow.appendChild(iconOffDiv);
+
+      content.appendChild(iconRow);
+
+      // Color overrides row
+      const colorRow = document.createElement('div');
+      colorRow.className = 'row';
+
+      const colorOnDiv = document.createElement('div');
+      colorOnDiv.className = 'field';
+      const colorOnField = document.createElement('ha-textfield');
+      colorOnField.label = 'Color (On)';
+      colorOnField.value = item.color_on || '';
+      colorOnField.addEventListener('input', (e) => {
+        this._updateEntity(index, 'color_on', e.target.value);
+      });
+      colorOnDiv.appendChild(colorOnField);
+      colorRow.appendChild(colorOnDiv);
+
+      const colorOffDiv = document.createElement('div');
+      colorOffDiv.className = 'field';
+      const colorOffField = document.createElement('ha-textfield');
+      colorOffField.label = 'Color (Off)';
+      colorOffField.value = item.color_off || '';
+      colorOffField.addEventListener('input', (e) => {
+        this._updateEntity(index, 'color_off', e.target.value);
+      });
+      colorOffDiv.appendChild(colorOffField);
+      colorRow.appendChild(colorOffDiv);
+
+      content.appendChild(colorRow);
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => this._removeEntity(index));
+      content.appendChild(removeBtn);
+
+      panel.appendChild(content);
+      list.appendChild(panel);
+    });
+    // Update hass on new selectors
+    this.shadowRoot?.querySelectorAll('ha-selector').forEach(s => s.hass = this._hass);
+  }
+
+  render() {
+    if (!this.shadowRoot) return;
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host { display: block; }
+        .field { margin-bottom: 16px; }
+        .field ha-textfield, .field ha-selector { display: block; width: 100%; }
+        ha-expansion-panel { display: block; margin-bottom: 8px; }
+        .panel-content { padding: 16px; }
+        .row { display: flex; gap: 16px; }
+        .row > * { flex: 1; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; height: 56px; }
+        .add-btn {
+          width: 100%; padding: 12px; margin-top: 8px;
+          background: var(--primary-color); color: var(--text-primary-color, #fff);
+          border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+        }
+        .remove-btn {
+          width: 100%; padding: 8px; margin-top: 8px;
+          background: var(--error-color, #db4437); color: #fff;
+          border: none; border-radius: 4px; cursor: pointer;
+        }
+      </style>
+      <div>
+        <ha-expansion-panel outlined expanded header="Card Settings">
+          <div class="panel-content">
+            <div class="field"><ha-textfield id="title" label="Title"></ha-textfield></div>
+            <div class="field"><ha-textfield id="columns" label="Columns" type="number"></ha-textfield></div>
+            <div class="row">
+              <div class="field"><ha-textfield id="icon_size" label="Icon Size"></ha-textfield></div>
+              <div class="field"><ha-textfield id="font_size" label="Font Size"></ha-textfield></div>
+            </div>
+            <div class="row">
+              <div class="field"><ha-textfield id="color_on" label="Color (On)"></ha-textfield></div>
+              <div class="field"><ha-textfield id="color_off" label="Color (Off)"></ha-textfield></div>
+            </div>
+            <div class="toggle-row">
+              <span>Show Last Changed</span>
+              <ha-switch id="show_last_changed"></ha-switch>
+            </div>
+          </div>
+        </ha-expansion-panel>
+        <ha-expansion-panel outlined expanded header="Entities">
+          <div class="panel-content">
+            <div id="entities-list"></div>
+            <button class="add-btn" id="add-entity">Add Entity</button>
+          </div>
+        </ha-expansion-panel>
+      </div>
+    `;
+
+    // Card settings
+    const title = this.shadowRoot.getElementById('title');
+    title.value = this._config.title || '';
+    title.addEventListener('input', (e) => { this._config.title = e.target.value || undefined; this._fire(); });
+
+    const columns = this.shadowRoot.getElementById('columns');
+    columns.value = this._config.columns ?? '';
+    columns.addEventListener('input', (e) => { this._config.columns = e.target.value ? Number(e.target.value) : undefined; this._fire(); });
+
+    const iconSize = this.shadowRoot.getElementById('icon_size');
+    iconSize.value = this._config.icon_size || '';
+    iconSize.addEventListener('input', (e) => { this._config.icon_size = e.target.value || undefined; this._fire(); });
+
+    const fontSize = this.shadowRoot.getElementById('font_size');
+    fontSize.value = this._config.font_size || '';
+    fontSize.addEventListener('input', (e) => { this._config.font_size = e.target.value || undefined; this._fire(); });
+
+    const colorOn = this.shadowRoot.getElementById('color_on');
+    colorOn.value = this._config.color_on || '';
+    colorOn.addEventListener('input', (e) => { this._config.color_on = e.target.value || undefined; this._fire(); });
+
+    const colorOff = this.shadowRoot.getElementById('color_off');
+    colorOff.value = this._config.color_off || '';
+    colorOff.addEventListener('input', (e) => { this._config.color_off = e.target.value || undefined; this._fire(); });
+
+    const showLastChanged = this.shadowRoot.getElementById('show_last_changed');
+    showLastChanged.checked = this._config.show_last_changed !== false;
+    showLastChanged.addEventListener('change', (e) => { this._config.show_last_changed = e.target.checked; this._fire(); });
+
+    this.shadowRoot.getElementById('add-entity').addEventListener('click', () => this._addEntity());
+
+    this._renderEntities();
+  }
+}
+
+customElements.define('multi-status-indicator-card-editor', MultiStatusIndicatorCardEditor);
 
 class MultiStatusIndicatorCard extends HTMLElement {
   constructor() {
@@ -24,25 +282,11 @@ class MultiStatusIndicatorCard extends HTMLElement {
   }
 
   setConfig(config) {
-    // Comprehensive config validation
-    if (!config.items || !Array.isArray(config.items)) {
-      throw new Error('items array is required');
-    }
-
-    if (config.items.length === 0) {
-      throw new Error('At least one item is required');
-    }
-
-    if (config.items.some(item => !item.entity)) {
-      throw new Error('Each item must have an entity property');
-    }
-
-    if (config.columns && (config.columns < 1 || config.columns > 12)) {
-      throw new Error('columns must be between 1 and 12');
-    }
-
+    // Store config - validation happens at render time to allow editor to work
     this._config = config;
-    this._render();
+    if (this._root) {
+      this._render();
+    }
   }
 
   set hass(hass) {
@@ -60,16 +304,11 @@ class MultiStatusIndicatorCard extends HTMLElement {
   }
 
   _hasEntitiesChanged(oldHass, newHass) {
-    // Get all entity IDs from config
-    const entityIds = this._config.items
-      .map(item => item.entity)
-      .filter(entity => entity);
+    const items = this._config?.items || [];
+    const entityIds = items.map(item => item?.entity).filter(Boolean);
 
-    // Check if any of our configured entities changed
     return entityIds.some(entityId => {
-      const oldState = oldHass.states[entityId];
-      const newState = newHass.states[entityId];
-      return oldState !== newState;
+      return oldHass.states[entityId] !== newHass.states[entityId];
     });
   }
 
@@ -78,6 +317,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
       this._root = document.createElement('ha-card');
       this.appendChild(this._root);
       this._createStyles();
+    }
+    // Render if we have config and hass
+    if (this._config && this._hass) {
+      this._render();
     }
   }
 
@@ -150,6 +393,20 @@ class MultiStatusIndicatorCard extends HTMLElement {
     const { _config: config, _hass: hass } = this;
     if (!config || !hass || !this._root) return;
 
+    // Validate items - show message if invalid
+    const items = config.items || [];
+    const validItems = items.filter(item => item && item.entity);
+
+    if (validItems.length === 0) {
+      if (!this._container) {
+        this._container = document.createElement('div');
+        this._container.className = 'card-container';
+        this._root.appendChild(this._container);
+      }
+      this._container.innerHTML = '<div style="padding:16px;color:var(--secondary-text-color);">Add entities to display</div>';
+      return;
+    }
+
     const {
       icon_size = '20px',
       font_size = '11px',
@@ -163,7 +420,6 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     this._root.style.cssText = 'padding:4px;margin:0;box-shadow:none;background:none';
 
-    // Update dynamic grid columns
     if (!this._container) {
       this._container = document.createElement('div');
       this._container.className = 'card-container';
@@ -173,7 +429,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
     const html = `
       ${title ? `<div class="card-title">${this._escapeHtml(title)}</div>` : ''}
       <div class="status-grid" style="grid-template-columns: repeat(${columns}, 1fr); font-size: ${font_size};">
-        ${config.items.map(item => this._renderItem(item, hass, {
+        ${validItems.map(item => this._renderItem(item, hass, {
           icon_size, font_size, show_last_changed, color_on, color_off, name_position
         })).join('')}
       </div>

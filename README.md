@@ -19,12 +19,8 @@ Yes, this is similar to the default HA [Glance card](https://www.home-assistant.
 - Tap-to-toggle support for multiple entity types (switches, lights, locks, covers, fans, automations, and more)
 - Custom icons for on/off states
 - State-based color indicators
-- Configurable name position (above or below icons)
-- Last changed time display (optional)
 - Global and per-item customization
-- Improved performance with template-based rendering
 - Long-press support for more-info dialog
-- Full keyboard navigation and accessibility
 - Works great for sprinklers, lights, zones, locks, and more
 
 ---
@@ -33,6 +29,49 @@ Yes, this is similar to the default HA [Glance card](https://www.home-assistant.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=sxdjt&repository=multi-status-indicator-card)
    
+
+## Configuration
+
+| Option              | Type    | Default   | Description                                    |
+| ------------------- | ------- | --------- | ---------------------------------------------- |
+| `title`             | string  | —         | Optional card title                            |
+| `columns`           | number  | 3         | Number of columns in the grid layout           |
+| `color_on`          | string  | `"green"` | Default color when entity is ON                |
+| `color_off`         | string  | `"red"`   | Default color when entity is OFF               |
+| `icon_size`         | string  | `"20px"`  | Size of the icons                              |
+| `font_size`         | string  | `"11px"`  | Font size for item names                       |
+| `show_last_changed` | boolean | `true`    | Show last-changed timestamp                    |
+| `name_position`     | string  | `"below"` | Position of entity name: `"above"` or `"below"` |
+| `items`             | array   | —         | List of entities to show (see below)           |
+
+### Item Options
+
+| Option              | Type    | Default                             | Description                                |
+| ------------------- | ------- | ----------------------------------- | ------------------------------------------ |
+| `entity`            | string  | —                                   | The entity to monitor (required)           |
+| `name`              | string  | Friendly name or entity ID fallback | Label shown with the icon                  |
+| `icon_on`           | string  | `'mdi:toggle-switch'`               | Icon when state is ON                      |
+| `icon_off`          | string  | `'mdi:toggle-switch-off'`           | Icon when state is OFF                     |
+| `color_on`          | string  | Inherits from global `color_on`     | Override ON color for this item            |
+| `color_off`         | string  | Inherits from global `color_off`    | Override OFF color for this item           |
+| `show_last_changed` | boolean | Inherits from global setting        | Override show_last_changed for this item   |
+
+## Supported Entity Types
+
+The card automatically handles toggling for these entity domains:
+
+- `switch` - toggle
+- `light` - toggle
+- `input_boolean` - toggle
+- `automation` - toggle
+- `fan` - toggle
+- `cover` - toggle (open/close)
+- `lock` - lock/unlock
+- `climate` - turn_on/turn_off
+- `media_player` - turn_on/turn_off
+
+For other entity types with on/off states, the card will attempt a generic turn_on/turn_off service call.
+
 
 ## Example Usage
 
@@ -108,65 +147,3 @@ items:
     color_off: "#607D8B"
     # Custom colors for this item
 ```
-
-## Configuration
-
-| Option              | Type    | Default   | Description                                    |
-| ------------------- | ------- | --------- | ---------------------------------------------- |
-| `title`             | string  | —         | Optional card title                            |
-| `columns`           | number  | 3         | Number of columns in the grid layout           |
-| `color_on`          | string  | `"green"` | Default color when entity is ON                |
-| `color_off`         | string  | `"red"`   | Default color when entity is OFF               |
-| `icon_size`         | string  | `"20px"`  | Size of the icons                              |
-| `font_size`         | string  | `"11px"`  | Font size for item names                       |
-| `show_last_changed` | boolean | `true`    | Show last-changed timestamp                    |
-| `name_position`     | string  | `"below"` | Position of entity name: `"above"` or `"below"` |
-| `items`             | array   | —         | List of entities to show (see below)           |
-
-### Item Options
-
-| Option              | Type    | Default                             | Description                                |
-| ------------------- | ------- | ----------------------------------- | ------------------------------------------ |
-| `entity`            | string  | —                                   | The entity to monitor (required)           |
-| `name`              | string  | Friendly name or entity ID fallback | Label shown with the icon                  |
-| `icon_on`           | string  | `'mdi:toggle-switch'`               | Icon when state is ON                      |
-| `icon_off`          | string  | `'mdi:toggle-switch-off'`           | Icon when state is OFF                     |
-| `color_on`          | string  | Inherits from global `color_on`     | Override ON color for this item            |
-| `color_off`         | string  | Inherits from global `color_off`    | Override OFF color for this item           |
-| `show_last_changed` | boolean | Inherits from global setting        | Override show_last_changed for this item   |
-
-## Supported Entity Types
-
-The card automatically handles toggling for these entity domains:
-
-- `switch` - toggle
-- `light` - toggle
-- `input_boolean` - toggle
-- `automation` - toggle
-- `fan` - toggle
-- `cover` - toggle (open/close)
-- `lock` - lock/unlock
-- `climate` - turn_on/turn_off
-- `media_player` - turn_on/turn_off
-
-For other entity types with on/off states, the card will attempt a generic turn_on/turn_off service call.
-
-## What's New
-
-### v2.1
-- **Per-item overrides**: `show_last_changed` can now be set per-item to override global setting
-- **Accessibility**: Full keyboard navigation (Tab/Enter/Space), ARIA labels, focus indicators
-- **Long-press support**: Hold for 500ms to open more-info dialog
-- **Unavailable state handling**: Grayed-out alert icon for unavailable/unknown entities
-- **Event delegation**: Better performance with single event listeners
-- **Alignment fix**: Icons properly aligned when mixing show_last_changed settings
-- **Error notifications**: Toast messages on service call failures
-
-### v2.0
-- **Multi-entity support**: Toggle switches, lights, locks, covers, fans, and more
-- **Name positioning**: Choose to display entity names above or below icons
-- **Performance boost**: Faster rendering with template-based approach
-- **Security**: HTML escaping for user-provided content
-- **Code quality**: Cleaner architecture, better maintainability
-- **Smart card sizing**: Dynamic height calculation based on content
-- **Home Assistant integration**: Added UI editor support hooks
