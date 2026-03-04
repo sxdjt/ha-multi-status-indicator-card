@@ -7,8 +7,8 @@ window.customCards.push({
 
 console.info(
   `%c MULTI-STATUS-INDICATOR-CARD %c v2.3 `,
-  'color: green; font-weight: bold; background: black',
-  'color: white; font-weight: bold; background: dimgray'
+  'color: black; background: #F2720C; font-weight: 600;',
+  'color: black; background: #00a5c9; font-weight: 600;'
 );
 
 // Visual Editor for Multi-Status Indicator Card
