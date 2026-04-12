@@ -6,7 +6,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c v2.3 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c v2.3.1 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );
@@ -317,6 +317,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
       this._root = document.createElement('ha-card');
       this.appendChild(this._root);
       this._createStyles();
+      // Fill the full grid cell height in sections view
+      this.style.display = 'block';
+      this.style.height = '100%';
+      this._root.style.height = '100%';
     }
     // Render if we have config and hass
     if (this._config && this._hass) {
@@ -653,6 +657,16 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
   getCardSize() {
     return Math.ceil((this._config?.items?.length || 0) / (this._config?.columns || 3));
+  }
+
+  // Sections view (grid layout) sizing - 12-column grid system
+  getGridOptions() {
+    return {
+      rows: 2,
+      columns: 6,
+      min_rows: 1,
+      min_columns: 3,
+    };
   }
 
   static getConfigElement() {
