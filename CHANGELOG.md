@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-05-13
+
+### Fixed
+- Replace deprecated `ha-textfield` with `ha-selector` in visual editor for compatibility with HA 2026.5.1+
+- Add `getGridOptions()` and `height: 100%` for correct sizing in HA sections view
+
+### Changed
+- Standardize console.info banner colors
+
 ## [2.3.0] - 2026-02-03
 
 ### Added

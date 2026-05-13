@@ -96,12 +96,15 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       // Name override
       const nameDiv = document.createElement('div');
       nameDiv.className = 'field';
-      const nameField = document.createElement('ha-textfield');
+      const nameField = document.createElement('ha-selector');
+      nameField.hass = this._hass;
+      nameField.selector = { text: {} };
       nameField.label = 'Custom Name';
       nameField.value = item.name || '';
-      nameField.addEventListener('input', (e) => {
-        this._updateEntity(index, 'name', e.target.value);
-        panel.header = e.target.value || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+      nameField.addEventListener('value-changed', (e) => {
+        e.stopPropagation();
+        this._updateEntity(index, 'name', e.detail.value);
+        panel.header = e.detail.value || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
       });
       nameDiv.appendChild(nameField);
       content.appendChild(nameDiv);
@@ -144,22 +147,28 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
 
       const colorOnDiv = document.createElement('div');
       colorOnDiv.className = 'field';
-      const colorOnField = document.createElement('ha-textfield');
+      const colorOnField = document.createElement('ha-selector');
+      colorOnField.hass = this._hass;
+      colorOnField.selector = { text: {} };
       colorOnField.label = 'Color (On)';
       colorOnField.value = item.color_on || '';
-      colorOnField.addEventListener('input', (e) => {
-        this._updateEntity(index, 'color_on', e.target.value);
+      colorOnField.addEventListener('value-changed', (e) => {
+        e.stopPropagation();
+        this._updateEntity(index, 'color_on', e.detail.value);
       });
       colorOnDiv.appendChild(colorOnField);
       colorRow.appendChild(colorOnDiv);
 
       const colorOffDiv = document.createElement('div');
       colorOffDiv.className = 'field';
-      const colorOffField = document.createElement('ha-textfield');
+      const colorOffField = document.createElement('ha-selector');
+      colorOffField.hass = this._hass;
+      colorOffField.selector = { text: {} };
       colorOffField.label = 'Color (Off)';
       colorOffField.value = item.color_off || '';
-      colorOffField.addEventListener('input', (e) => {
-        this._updateEntity(index, 'color_off', e.target.value);
+      colorOffField.addEventListener('value-changed', (e) => {
+        e.stopPropagation();
+        this._updateEntity(index, 'color_off', e.detail.value);
       });
       colorOffDiv.appendChild(colorOffField);
       colorRow.appendChild(colorOffDiv);
@@ -187,7 +196,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       <style>
         :host { display: block; }
         .field { margin-bottom: 16px; }
-        .field ha-textfield, .field ha-selector { display: block; width: 100%; }
+        .field ha-selector { display: block; width: 100%; }
         ha-expansion-panel { display: block; margin-bottom: 8px; }
         .panel-content { padding: 16px; }
         .row { display: flex; gap: 16px; }
@@ -207,15 +216,15 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       <div>
         <ha-expansion-panel outlined expanded header="Card Settings">
           <div class="panel-content">
-            <div class="field"><ha-textfield id="title" label="Title"></ha-textfield></div>
-            <div class="field"><ha-textfield id="columns" label="Columns" type="number"></ha-textfield></div>
+            <div class="field"><ha-selector id="title"></ha-selector></div>
+            <div class="field"><ha-selector id="columns"></ha-selector></div>
             <div class="row">
-              <div class="field"><ha-textfield id="icon_size" label="Icon Size"></ha-textfield></div>
-              <div class="field"><ha-textfield id="font_size" label="Font Size"></ha-textfield></div>
+              <div class="field"><ha-selector id="icon_size"></ha-selector></div>
+              <div class="field"><ha-selector id="font_size"></ha-selector></div>
             </div>
             <div class="row">
-              <div class="field"><ha-textfield id="color_on" label="Color (On)"></ha-textfield></div>
-              <div class="field"><ha-textfield id="color_off" label="Color (Off)"></ha-textfield></div>
+              <div class="field"><ha-selector id="color_on"></ha-selector></div>
+              <div class="field"><ha-selector id="color_off"></ha-selector></div>
             </div>
             <div class="toggle-row">
               <span>Show Last Changed</span>
@@ -232,30 +241,48 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       </div>
     `;
 
-    // Card settings
+    // Card settings - initialize ha-selector elements (properties set here after innerHTML)
     const title = this.shadowRoot.getElementById('title');
+    title.hass = this._hass;
+    title.selector = { text: {} };
+    title.label = 'Title';
     title.value = this._config.title || '';
-    title.addEventListener('input', (e) => { this._config.title = e.target.value || undefined; this._fire(); });
+    title.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.title = e.detail.value || undefined; this._fire(); });
 
     const columns = this.shadowRoot.getElementById('columns');
+    columns.hass = this._hass;
+    columns.selector = { number: { mode: 'box', step: 1, min: 1, max: 20 } };
+    columns.label = 'Columns';
     columns.value = this._config.columns ?? '';
-    columns.addEventListener('input', (e) => { this._config.columns = e.target.value ? Number(e.target.value) : undefined; this._fire(); });
+    columns.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.columns = e.detail.value ? Number(e.detail.value) : undefined; this._fire(); });
 
     const iconSize = this.shadowRoot.getElementById('icon_size');
+    iconSize.hass = this._hass;
+    iconSize.selector = { text: {} };
+    iconSize.label = 'Icon Size';
     iconSize.value = this._config.icon_size || '';
-    iconSize.addEventListener('input', (e) => { this._config.icon_size = e.target.value || undefined; this._fire(); });
+    iconSize.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.icon_size = e.detail.value || undefined; this._fire(); });
 
     const fontSize = this.shadowRoot.getElementById('font_size');
+    fontSize.hass = this._hass;
+    fontSize.selector = { text: {} };
+    fontSize.label = 'Font Size';
     fontSize.value = this._config.font_size || '';
-    fontSize.addEventListener('input', (e) => { this._config.font_size = e.target.value || undefined; this._fire(); });
+    fontSize.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.font_size = e.detail.value || undefined; this._fire(); });
 
     const colorOn = this.shadowRoot.getElementById('color_on');
+    colorOn.hass = this._hass;
+    colorOn.selector = { text: {} };
+    colorOn.label = 'Color (On)';
     colorOn.value = this._config.color_on || '';
-    colorOn.addEventListener('input', (e) => { this._config.color_on = e.target.value || undefined; this._fire(); });
+    colorOn.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.color_on = e.detail.value || undefined; this._fire(); });
 
     const colorOff = this.shadowRoot.getElementById('color_off');
+    colorOff.hass = this._hass;
+    colorOff.selector = { text: {} };
+    colorOff.label = 'Color (Off)';
     colorOff.value = this._config.color_off || '';
-    colorOff.addEventListener('input', (e) => { this._config.color_off = e.target.value || undefined; this._fire(); });
+    colorOff.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.color_off = e.detail.value || undefined; this._fire(); });
 
     const showLastChanged = this.shadowRoot.getElementById('show_last_changed');
     showLastChanged.checked = this._config.show_last_changed !== false;
