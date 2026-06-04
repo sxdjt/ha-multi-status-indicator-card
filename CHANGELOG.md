@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-06-04
+
+### Added
+- Card suggestion support for HA 2026.6+: the card now appears in the "Community" section of the card picker when the user selects a `binary_sensor`, `switch`, `light`, `input_boolean`, or `automation` entity.
+
 ## [2.3.1] - 2026-05-13
 
 ### Fixed

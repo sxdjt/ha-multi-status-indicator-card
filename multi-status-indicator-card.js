@@ -2,11 +2,26 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'multi-status-indicator-card',
   name: 'Multi Status Indicator Card',
-  description: 'A grid display for multiple entity status indicators with toggle support'
+  description: 'A grid display for multiple entity status indicators with toggle support',
+
+  // Suggest this card for entities that naturally display as on/off status indicators.
+  // The card also supports cover, lock, climate, and media_player, but those domains
+  // are less typical as grid-style status indicators and are not suggested here.
+  getEntitySuggestion: (hass, entityId) => {
+    const entityState = hass.states[entityId];
+    if (!entityState) return null;
+
+    const domain = entityId.split('.')[0];
+    const indicatorDomains = ['binary_sensor', 'switch', 'light', 'input_boolean', 'automation'];
+
+    if (!indicatorDomains.includes(domain)) return null;
+
+    return { config: { type: 'custom:multi-status-indicator-card', items: [{ entity: entityId }] } };
+  }
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c v2.3.1 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c v2.4.0 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );
