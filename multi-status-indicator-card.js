@@ -3,6 +3,7 @@ window.customCards.push({
   type: 'multi-status-indicator-card',
   name: 'Multi Status Indicator Card',
   description: 'A grid display for multiple entity status indicators with toggle support',
+  preview: true,
 
   // Suggest this card for entities that naturally display as on/off status indicators.
   // The card also supports cover, lock, climate, and media_player, but those domains
@@ -715,13 +716,16 @@ class MultiStatusIndicatorCard extends HTMLElement {
     return document.createElement('multi-status-indicator-card-editor');
   }
 
-  static getStubConfig() {
-    return {
-      columns: 3,
-      items: [
-        { entity: 'switch.example', name: 'Example' }
-      ]
-    };
+  static getStubConfig(hass) {
+    const statusDomains = ['switch', 'binary_sensor', 'light', 'input_boolean'];
+    const items = hass
+      ? Object.keys(hass.states)
+          .filter((id) => statusDomains.includes(id.split('.')[0]))
+          .slice(0, 3)
+          .map((id) => ({ entity: id }))
+      : [{ entity: 'switch.example', name: 'Example' }];
+
+    return { columns: 3, items };
   }
 }
 
