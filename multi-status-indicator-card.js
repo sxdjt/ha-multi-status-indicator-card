@@ -22,7 +22,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c v2.4.0 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.7.19 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );
@@ -191,6 +191,35 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
 
       content.appendChild(colorRow);
 
+      // Per-item "show last changed" override. Tri-state: "default" inherits the card-level
+      // setting, while "show"/"hide" force it on/off for this item only.
+      const showChangedDiv = document.createElement('div');
+      showChangedDiv.className = 'field';
+      const showChangedField = document.createElement('ha-selector');
+      showChangedField.hass = this._hass;
+      showChangedField.selector = { select: { mode: 'dropdown', options: [
+        { value: 'default', label: 'Default (use card setting)' },
+        { value: 'show', label: 'Show' },
+        { value: 'hide', label: 'Hide' }
+      ] } };
+      showChangedField.label = 'Show Last Changed';
+      showChangedField.value = item.show_last_changed === undefined
+        ? 'default'
+        : (item.show_last_changed ? 'show' : 'hide');
+      showChangedField.addEventListener('value-changed', (e) => {
+        e.stopPropagation();
+        const selection = e.detail.value;
+        const overrideValue = selection === 'show' ? true : selection === 'hide' ? false : undefined;
+        const items = [...this._config.items];
+        items[index] = { ...items[index], show_last_changed: overrideValue };
+        // "default" removes the override entirely so the item inherits the card setting
+        if (overrideValue === undefined) delete items[index].show_last_changed;
+        this._config.items = items;
+        this._fire();
+      });
+      showChangedDiv.appendChild(showChangedField);
+      content.appendChild(showChangedDiv);
+
       // Remove button
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-btn';
@@ -242,6 +271,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
               <div class="field"><ha-selector id="color_on"></ha-selector></div>
               <div class="field"><ha-selector id="color_off"></ha-selector></div>
             </div>
+            <div class="field"><ha-selector id="name_position"></ha-selector></div>
             <div class="toggle-row">
               <span>Show Last Changed</span>
               <ha-switch id="show_last_changed"></ha-switch>
@@ -300,6 +330,16 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     colorOff.value = this._config.color_off || '';
     colorOff.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.color_off = e.detail.value || undefined; this._fire(); });
 
+    const namePosition = this.shadowRoot.getElementById('name_position');
+    namePosition.hass = this._hass;
+    namePosition.selector = { select: { mode: 'dropdown', options: [
+      { value: 'below', label: 'Below icon' },
+      { value: 'above', label: 'Above icon' }
+    ] } };
+    namePosition.label = 'Name Position';
+    namePosition.value = this._config.name_position || 'below';
+    namePosition.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.name_position = e.detail.value === 'below' ? undefined : e.detail.value; this._fire(); });
+
     const showLastChanged = this.shadowRoot.getElementById('show_last_changed');
     showLastChanged.checked = this._config.show_last_changed !== false;
     showLastChanged.addEventListener('change', (e) => { this._config.show_last_changed = e.target.checked; this._fire(); });
@@ -319,9 +359,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
     this._hass = null;
     this._root = null;
     this._container = null;
-    this._styleElement = null;
     this._eventListenerAttached = false;
     this._pressTimer = null;
+    // Set true when a long-press fires so the trailing click does not also toggle the entity
+    this._longPressFired = false;
   }
 
   setConfig(config) {
@@ -371,30 +412,32 @@ class MultiStatusIndicatorCard extends HTMLElement {
     }
   }
 
+  // Inject the card stylesheet once for the whole document. The card renders into light
+  // DOM, so a shared, prefixed (`msic-`) stylesheet avoids both per-instance duplication
+  // and class-name collisions with other cards on the dashboard.
   _createStyles() {
-    if (this._styleElement) return;
+    const STYLE_ELEMENT_ID = 'msic-card-styles';
+    if (document.getElementById(STYLE_ELEMENT_ID)) return;
 
-    this._styleElement = document.createElement('style');
-    this._styleElement.textContent = `
-      :host {
-        display: block;
-      }
-      .card-container {
+    const style = document.createElement('style');
+    style.id = STYLE_ELEMENT_ID;
+    style.textContent = `
+      .msic-container {
         padding: 4px;
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
-      .card-title {
+      .msic-title {
         font-size: 14px;
         font-weight: 600;
         margin: 0 0 4px 0;
       }
-      .status-grid {
+      .msic-grid {
         display: grid;
         gap: 4px;
       }
-      .status-item {
+      .msic-item {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -405,35 +448,35 @@ class MultiStatusIndicatorCard extends HTMLElement {
         transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
         background-color: transparent;
       }
-      .status-item:hover {
+      .msic-item:hover {
         background-color: var(--ha-card-background, var(--card-background-color, rgba(128, 128, 128, 0.1)));
       }
-      .status-item:active {
+      .msic-item:active {
         transform: scale(0.95);
       }
-      .status-item:focus {
+      .msic-item:focus {
         outline: 2px solid var(--primary-color);
         outline-offset: 2px;
       }
-      .status-item.unavailable {
+      .msic-item.msic-unavailable {
         opacity: 0.5;
         cursor: default;
       }
-      .status-item.unavailable:hover {
+      .msic-item.msic-unavailable:hover {
         background-color: transparent;
       }
-      .status-item.unavailable:active {
+      .msic-item.msic-unavailable:active {
         transform: none;
       }
-      .item-name {
+      .msic-name {
         text-align: center;
       }
-      .item-time {
+      .msic-time {
         font-size: 10px;
         color: var(--secondary-text-color);
       }
     `;
-    this._root.appendChild(this._styleElement);
+    document.head.appendChild(style);
   }
 
   _render() {
@@ -447,7 +490,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
     if (validItems.length === 0) {
       if (!this._container) {
         this._container = document.createElement('div');
-        this._container.className = 'card-container';
+        this._container.className = 'msic-container';
         this._root.appendChild(this._container);
       }
       this._container.innerHTML = '<div style="padding:16px;color:var(--secondary-text-color);">Add entities to display</div>';
@@ -469,13 +512,13 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     if (!this._container) {
       this._container = document.createElement('div');
-      this._container.className = 'card-container';
+      this._container.className = 'msic-container';
       this._root.appendChild(this._container);
     }
 
     const html = `
-      ${title ? `<div class="card-title">${this._escapeHtml(title)}</div>` : ''}
-      <div class="status-grid" style="grid-template-columns: repeat(${columns}, 1fr); font-size: ${font_size};">
+      ${title ? `<div class="msic-title">${this._escapeHtml(title)}</div>` : ''}
+      <div class="msic-grid" style="grid-template-columns: repeat(${columns}, 1fr); font-size: ${font_size};">
         ${validItems.map(item => this._renderItem(item, hass, {
           icon_size, font_size, show_last_changed, color_on, color_off, name_position
         })).join('')}
@@ -483,6 +526,14 @@ class MultiStatusIndicatorCard extends HTMLElement {
     `;
 
     this._container.innerHTML = html;
+
+    // Hydrate the HA-native relative-time elements. They self-update and localize, but
+    // `hass` and `datetime` must be set as properties (they cannot be passed via innerHTML).
+    this._container.querySelectorAll('ha-relative-time').forEach((element) => {
+      element.hass = hass;
+      element.datetime = element.dataset.datetime;
+    });
+
     this._attachEventListeners();
   }
 
@@ -509,18 +560,21 @@ class MultiStatusIndicatorCard extends HTMLElement {
       ? item.show_last_changed
       : options.show_last_changed;
 
-    const nameHtml = `<div class="item-name">${this._escapeHtml(name)}</div>`;
+    const nameHtml = `<div class="msic-name">${this._escapeHtml(name)}</div>`;
     const iconHtml = `<ha-icon icon="${icon}" style="color:${color};width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>`;
 
-    // Always render time container for consistent alignment, but make invisible when not shown
-    const lastChangedHtml = `<div class="item-time" style="visibility:${showLastChanged ? 'visible' : 'hidden'}">${showLastChanged ? this._formatTime(stateObj.last_changed, hass) : '&nbsp;'}</div>`;
+    // Use HA's native relative-time element (self-updating, localized) when shown. Always
+    // reserve the row (hidden spacer when off) so items stay vertically aligned in the grid.
+    const lastChangedHtml = showLastChanged
+      ? `<ha-relative-time class="msic-time" data-datetime="${stateObj.last_changed}"></ha-relative-time>`
+      : `<div class="msic-time" style="visibility:hidden">&nbsp;</div>`;
 
     const content = options.name_position === 'above'
       ? `${nameHtml}${iconHtml}${lastChangedHtml}`
       : `${iconHtml}${nameHtml}${lastChangedHtml}`;
 
     return `
-      <div class="status-item"
+      <div class="msic-item"
            data-entity="${item.entity}"
            role="button"
            tabindex="0"
@@ -533,14 +587,18 @@ class MultiStatusIndicatorCard extends HTMLElement {
   }
 
   _renderUnavailableItem(item, name, options) {
+    // `data-entity` is included so a long-press can still open the more-info dialog (useful
+    // for diagnosing the unavailable entity). The `msic-unavailable` class keeps click/toggle
+    // disabled via the click handler's guard.
     return `
-      <div class="status-item unavailable"
+      <div class="msic-item msic-unavailable"
+           data-entity="${item.entity}"
            role="status"
            aria-label="${this._escapeHtml(name)} is unavailable"
            title="${this._escapeHtml(name)} is unavailable">
         <ha-icon icon="mdi:alert-circle-outline"
                  style="color:var(--disabled-text-color);width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>
-        <div class="item-name">${this._escapeHtml(name)}</div>
+        <div class="msic-name">${this._escapeHtml(name)}</div>
       </div>
     `;
   }
@@ -574,16 +632,22 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     // Event delegation for better performance
     this._container.addEventListener('click', (e) => {
-      const item = e.target.closest('.status-item');
-      if (!item || !item.dataset.entity || item.classList.contains('unavailable')) return;
+      // A long-press already handled this interaction (opened more-info); swallow the
+      // trailing click so the entity is not also toggled.
+      if (this._longPressFired) {
+        this._longPressFired = false;
+        return;
+      }
+      const item = e.target.closest('.msic-item');
+      if (!item || !item.dataset.entity || item.classList.contains('msic-unavailable')) return;
       this._handleItemClick(item.dataset.entity);
     });
 
     // Keyboard navigation support
     this._container.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
-        const item = e.target.closest('.status-item');
-        if (item && item.dataset.entity && !item.classList.contains('unavailable')) {
+        const item = e.target.closest('.msic-item');
+        if (item && item.dataset.entity && !item.classList.contains('msic-unavailable')) {
           e.preventDefault();
           this._handleItemClick(item.dataset.entity);
         }
@@ -592,10 +656,13 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     // Long-press for more-info dialog
     this._container.addEventListener('pointerdown', (e) => {
-      const item = e.target.closest('.status-item');
+      const item = e.target.closest('.msic-item');
       if (!item || !item.dataset.entity) return;
 
+      // Reset per interaction so a stale flag from a previous press cannot suppress a click
+      this._longPressFired = false;
       this._pressTimer = setTimeout(() => {
+        this._longPressFired = true;
         this._showMoreInfo(item.dataset.entity);
         this._pressTimer = null;
       }, 500);
@@ -684,14 +751,6 @@ class MultiStatusIndicatorCard extends HTMLElement {
     this.dispatchEvent(event);
   }
 
-  _formatTime(timestamp, hass) {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString(hass.locale?.language || 'en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
-    });
-  }
-
   _escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -702,10 +761,17 @@ class MultiStatusIndicatorCard extends HTMLElement {
     return Math.ceil((this._config?.items?.length || 0) / (this._config?.columns || 3));
   }
 
-  // Sections view (grid layout) sizing - 12-column grid system
+  // Sections view (grid layout) sizing. Derive the row count from the actual content so
+  // longer entity lists are not clipped: roughly one grid row per row of indicators, plus
+  // one for the title when present.
   getGridOptions() {
+    const validItemCount = (this._config?.items || []).filter(item => item && item.entity).length;
+    const columns = this._config?.columns || 3;
+    const indicatorRows = Math.max(1, Math.ceil(validItemCount / columns));
+    const titleRows = this._config?.title ? 1 : 0;
+
     return {
-      rows: 2,
+      rows: indicatorRows + titleRows,
       columns: 6,
       min_rows: 1,
       min_columns: 3,

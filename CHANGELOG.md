@@ -2,13 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+## [2026.7.19] - 2026-07-19
+
 ### Added
+- Visual editor now exposes `name_position` (above/below the icon) and a per-item "Show Last Changed" override (Default / Show / Hide).
+- Unavailable items now support long-press to open the more-info dialog (helps diagnose the unavailable entity) while remaining non-toggleable.
 - Card picker preview: added `preview: true` to card registration and updated `getStubConfig()` to accept the `hass` object, populating items with real switch, binary sensor, light, and input boolean entities instead of a placeholder `switch.example`.
+
+### Changed
+- Last-changed timestamps now use Home Assistant's native `ha-relative-time` element, giving self-updating, localized relative times instead of a static clock time.
+- `getGridOptions()` derives its row count from the number of items and columns (plus the title) instead of a fixed value, so longer entity lists are not clipped in sections view.
+- Switched to CalVer versioning (`YYYY.M.D`).
+
+### Fixed
+- Long-press no longer also toggles the entity: the trailing `click` after a long-press (which opens the more-info dialog) is now suppressed.
+- Card styles are prefixed (`msic-`) and injected once into the document head, preventing class-name collisions with other cards and duplicate `<style>` blocks per card instance.
 
 ## [2.4.0] - 2026-06-04
 
