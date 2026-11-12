@@ -22,7 +22,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.7.19 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.11 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );
@@ -69,6 +69,37 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     this._config.items = this._config.items.filter((_, i) => i !== index);
     this._fire();
     this._renderEntities();
+    // The rebuild destroyed the focused Remove button; move focus somewhere stable
+    this.shadowRoot?.getElementById('add-entity')?.focus();
+  }
+
+  // Color text field validation: an error message below the field for invalid colors.
+  // The live region exists from the start so screen readers announce the error when it
+  // appears, and it is rebuilt only when validity flips, not on every keystroke.
+  _addColorValidation(selector, label) {
+    const error = document.createElement('div');
+    error.className = 'error-text';
+    error.setAttribute('aria-live', 'polite');
+    selector.insertAdjacentElement('afterend', error);
+
+    let shown = false;
+    const update = (v) => {
+      const invalid = Boolean(v) && !CSS.supports('color', v);
+      if (invalid === shown) return;
+      shown = invalid;
+      error.replaceChildren();
+      if (!invalid) return;
+      const icon = document.createElement('ha-icon');
+      icon.icon = 'mdi:alert-circle';
+      icon.setAttribute('aria-hidden', 'true');
+      const prefix = document.createElement('strong');
+      prefix.textContent = 'Error: ';
+      const message = document.createElement('span');
+      message.append(prefix, `${label} is not a valid color. Use a hex code (#FF0000), a color name (red), or var(--token).`);
+      error.append(icon, message);
+    };
+    update(selector.value);
+    selector.addEventListener('value-changed', (e) => update(e.detail.value));
   }
 
   _updateEntity(index, field, value) {
@@ -100,6 +131,8 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const entityPicker = document.createElement('ha-selector');
       entityPicker.hass = this._hass;
       entityPicker.selector = { entity: {} };
+      // Each item needs an entity; every other field is optional
+      entityPicker.required = true;
       entityPicker.value = item.entity || '';
       entityPicker.label = 'Entity';
       entityPicker.addEventListener('value-changed', (e) => {
@@ -115,6 +148,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const nameField = document.createElement('ha-selector');
       nameField.hass = this._hass;
       nameField.selector = { text: {} };
+      nameField.required = false;
       nameField.label = 'Custom Name';
       nameField.value = item.name || '';
       nameField.addEventListener('value-changed', (e) => {
@@ -134,6 +168,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const iconOnPicker = document.createElement('ha-selector');
       iconOnPicker.hass = this._hass;
       iconOnPicker.selector = { icon: {} };
+      iconOnPicker.required = false;
       iconOnPicker.value = item.icon_on || '';
       iconOnPicker.label = 'Icon (On)';
       iconOnPicker.addEventListener('value-changed', (e) => {
@@ -147,6 +182,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const iconOffPicker = document.createElement('ha-selector');
       iconOffPicker.hass = this._hass;
       iconOffPicker.selector = { icon: {} };
+      iconOffPicker.required = false;
       iconOffPicker.value = item.icon_off || '';
       iconOffPicker.label = 'Icon (Off)';
       iconOffPicker.addEventListener('value-changed', (e) => {
@@ -166,13 +202,16 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const colorOnField = document.createElement('ha-selector');
       colorOnField.hass = this._hass;
       colorOnField.selector = { text: {} };
+      colorOnField.required = false;
       colorOnField.label = 'Color (On)';
+      colorOnField.helper = 'Overrides the card color for this entity';
       colorOnField.value = item.color_on || '';
       colorOnField.addEventListener('value-changed', (e) => {
         e.stopPropagation();
         this._updateEntity(index, 'color_on', e.detail.value);
       });
       colorOnDiv.appendChild(colorOnField);
+      this._addColorValidation(colorOnField, 'Color (On)');
       colorRow.appendChild(colorOnDiv);
 
       const colorOffDiv = document.createElement('div');
@@ -180,13 +219,16 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       const colorOffField = document.createElement('ha-selector');
       colorOffField.hass = this._hass;
       colorOffField.selector = { text: {} };
+      colorOffField.required = false;
       colorOffField.label = 'Color (Off)';
+      colorOffField.helper = 'Overrides the card color for this entity';
       colorOffField.value = item.color_off || '';
       colorOffField.addEventListener('value-changed', (e) => {
         e.stopPropagation();
         this._updateEntity(index, 'color_off', e.detail.value);
       });
       colorOffDiv.appendChild(colorOffField);
+      this._addColorValidation(colorOffField, 'Color (Off)');
       colorRow.appendChild(colorOffDiv);
 
       content.appendChild(colorRow);
@@ -197,6 +239,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       showChangedDiv.className = 'field';
       const showChangedField = document.createElement('ha-selector');
       showChangedField.hass = this._hass;
+      showChangedField.required = false;
       showChangedField.selector = { select: { mode: 'dropdown', options: [
         { value: 'default', label: 'Default (use card setting)' },
         { value: 'show', label: 'Show' },
@@ -221,9 +264,14 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       content.appendChild(showChangedDiv);
 
       // Remove button
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-btn';
-      removeBtn.textContent = 'Remove';
+      // Visible text stays "Remove"; the hidden suffix gives each button a distinct name
+      const removeBtn = document.createElement('ha-button');
+      removeBtn.setAttribute('appearance', 'plain');
+      removeBtn.setAttribute('variant', 'danger');
+      const removeContext = document.createElement('span');
+      removeContext.className = 'visually-hidden';
+      removeContext.textContent = ` entity ${index + 1}`;
+      removeBtn.append('Remove', removeContext);
       removeBtn.addEventListener('click', () => this._removeEntity(index));
       content.appendChild(removeBtn);
 
@@ -246,16 +294,20 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
         .panel-content { padding: 16px; }
         .row { display: flex; gap: 16px; }
         .row > * { flex: 1; }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; height: 56px; }
-        .add-btn {
-          width: 100%; padding: 12px; margin-top: 8px;
-          background: var(--primary-color); color: var(--text-primary-color, #fff);
-          border: none; border-radius: 4px; cursor: pointer; font-size: 14px;
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; min-height: 56px; }
+        ha-button { margin-top: 8px; }
+        /* Text stays primary color for 4.5:1; red only on non-text parts, which need 3:1 */
+        .error-text {
+          display: flex; align-items: flex-start; gap: 6px;
+          font-size: 12px; color: var(--primary-text-color);
+          margin-top: 6px; padding: 4px 8px;
+          border-left: 3px solid var(--error-color, #db4437);
         }
-        .remove-btn {
-          width: 100%; padding: 8px; margin-top: 8px;
-          background: var(--error-color, #db4437); color: #fff;
-          border: none; border-radius: 4px; cursor: pointer;
+        .error-text:empty { display: none; }
+        .error-text ha-icon { flex: 0 0 auto; color: var(--error-color, #db4437); --mdc-icon-size: 16px; }
+        .visually-hidden {
+          position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+          overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
         }
       </style>
       <div>
@@ -274,14 +326,14 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
             <div class="field"><ha-selector id="name_position"></ha-selector></div>
             <div class="toggle-row">
               <span>Show Last Changed</span>
-              <ha-switch id="show_last_changed"></ha-switch>
+              <ha-switch id="show_last_changed" aria-label="Show Last Changed"></ha-switch>
             </div>
           </div>
         </ha-expansion-panel>
         <ha-expansion-panel outlined expanded header="Entities">
           <div class="panel-content">
             <div id="entities-list"></div>
-            <button class="add-btn" id="add-entity">Add Entity</button>
+            <ha-button id="add-entity">Add Entity</ha-button>
           </div>
         </ha-expansion-panel>
       </div>
@@ -291,6 +343,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     const title = this.shadowRoot.getElementById('title');
     title.hass = this._hass;
     title.selector = { text: {} };
+    title.required = false;
     title.label = 'Title';
     title.value = this._config.title || '';
     title.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.title = e.detail.value || undefined; this._fire(); });
@@ -298,6 +351,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     const columns = this.shadowRoot.getElementById('columns');
     columns.hass = this._hass;
     columns.selector = { number: { mode: 'box', step: 1, min: 1, max: 20 } };
+    columns.required = false;
     columns.label = 'Columns';
     columns.value = this._config.columns ?? '';
     columns.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.columns = e.detail.value ? Number(e.detail.value) : undefined; this._fire(); });
@@ -305,33 +359,44 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     const iconSize = this.shadowRoot.getElementById('icon_size');
     iconSize.hass = this._hass;
     iconSize.selector = { text: {} };
+    iconSize.required = false;
     iconSize.label = 'Icon Size';
+    iconSize.helper = 'CSS size, e.g. 20px (default) or 1.5em';
     iconSize.value = this._config.icon_size || '';
     iconSize.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.icon_size = e.detail.value || undefined; this._fire(); });
 
     const fontSize = this.shadowRoot.getElementById('font_size');
     fontSize.hass = this._hass;
     fontSize.selector = { text: {} };
+    fontSize.required = false;
     fontSize.label = 'Font Size';
+    fontSize.helper = 'CSS size, e.g. 11px (default)';
     fontSize.value = this._config.font_size || '';
     fontSize.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.font_size = e.detail.value || undefined; this._fire(); });
 
     const colorOn = this.shadowRoot.getElementById('color_on');
     colorOn.hass = this._hass;
     colorOn.selector = { text: {} };
+    colorOn.required = false;
     colorOn.label = 'Color (On)';
+    colorOn.helper = 'Hex (#4CAF50), color name or var(--token). Default: green';
     colorOn.value = this._config.color_on || '';
     colorOn.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.color_on = e.detail.value || undefined; this._fire(); });
+    this._addColorValidation(colorOn, 'Color (On)');
 
     const colorOff = this.shadowRoot.getElementById('color_off');
     colorOff.hass = this._hass;
     colorOff.selector = { text: {} };
+    colorOff.required = false;
     colorOff.label = 'Color (Off)';
+    colorOff.helper = 'Hex (#F44336), color name or var(--token). Default: red';
     colorOff.value = this._config.color_off || '';
     colorOff.addEventListener('value-changed', (e) => { e.stopPropagation(); this._config.color_off = e.detail.value || undefined; this._fire(); });
+    this._addColorValidation(colorOff, 'Color (Off)');
 
     const namePosition = this.shadowRoot.getElementById('name_position');
     namePosition.hass = this._hass;
+    namePosition.required = false;
     namePosition.selector = { select: { mode: 'dropdown', options: [
       { value: 'below', label: 'Below icon' },
       { value: 'above', label: 'Above icon' }
@@ -398,9 +463,9 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
   connectedCallback() {
     if (!this._root) {
+      this.appendChild(this._createStyles());
       this._root = document.createElement('ha-card');
       this.appendChild(this._root);
-      this._createStyles();
       // Fill the full grid cell height in sections view
       this.style.display = 'block';
       this.style.height = '100%';
@@ -412,15 +477,12 @@ class MultiStatusIndicatorCard extends HTMLElement {
     }
   }
 
-  // Inject the card stylesheet once for the whole document. The card renders into light
-  // DOM, so a shared, prefixed (`msic-`) stylesheet avoids both per-instance duplication
-  // and class-name collisions with other cards on the dashboard.
+  // The card renders into light DOM, but HA places every card inside a shadow root, which a
+  // stylesheet in document.head cannot reach (the grid, focus and muted-text rules never
+  // applied). A <style> inside the card element applies to whichever root holds the card
+  // and moves with it. Class names stay prefixed (`msic-`) to avoid collisions in that root.
   _createStyles() {
-    const STYLE_ELEMENT_ID = 'msic-card-styles';
-    if (document.getElementById(STYLE_ELEMENT_ID)) return;
-
     const style = document.createElement('style');
-    style.id = STYLE_ELEMENT_ID;
     style.textContent = `
       .msic-container {
         padding: 4px;
@@ -458,9 +520,11 @@ class MultiStatusIndicatorCard extends HTMLElement {
         outline: 2px solid var(--primary-color);
         outline-offset: 2px;
       }
+      /* No opacity here: 0.5 dropped the name to 3.4:1. The muted look comes from
+         --secondary-text-color (4.5:1+ in both themes) and the "Unavailable" label */
       .msic-item.msic-unavailable {
-        opacity: 0.5;
         cursor: default;
+        color: var(--secondary-text-color);
       }
       .msic-item.msic-unavailable:hover {
         background-color: transparent;
@@ -476,7 +540,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
         color: var(--secondary-text-color);
       }
     `;
-    document.head.appendChild(style);
+    return style;
   }
 
   _render() {
@@ -516,6 +580,13 @@ class MultiStatusIndicatorCard extends HTMLElement {
       this._root.appendChild(this._container);
     }
 
+    // innerHTML replaces every item, so focus would drop to the page each time a watched
+    // entity changes (including right after a keyboard toggle). Restore it afterwards.
+    const active = this.getRootNode().activeElement;
+    const focusedEntity = active && this._container.contains(active)
+      ? active.closest('.msic-item')?.dataset.entity
+      : null;
+
     const html = `
       ${title ? `<div class="msic-title">${this._escapeHtml(title)}</div>` : ''}
       <div class="msic-grid" style="grid-template-columns: repeat(${columns}, 1fr); font-size: ${font_size};">
@@ -526,6 +597,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
     `;
 
     this._container.innerHTML = html;
+
+    if (focusedEntity) {
+      this._container.querySelector(`.msic-item[data-entity="${CSS.escape(focusedEntity)}"]`)?.focus();
+    }
 
     // Hydrate the HA-native relative-time elements. They self-update and localize, but
     // `hass` and `datetime` must be set as properties (they cannot be passed via innerHTML).
@@ -580,7 +655,8 @@ class MultiStatusIndicatorCard extends HTMLElement {
            tabindex="0"
            aria-label="${this._escapeHtml(name)}, ${state}, tap to toggle"
            aria-pressed="${isOn}"
-           title="Tap to toggle • Long press for details">
+           aria-keyshortcuts="Shift+Enter"
+           title="Tap to toggle • Long press or Shift+Enter for details">
         ${content}
       </div>
     `;
@@ -593,12 +669,16 @@ class MultiStatusIndicatorCard extends HTMLElement {
     return `
       <div class="msic-item msic-unavailable"
            data-entity="${item.entity}"
-           role="status"
+           role="button"
+           tabindex="0"
+           aria-disabled="true"
            aria-label="${this._escapeHtml(name)} is unavailable"
-           title="${this._escapeHtml(name)} is unavailable">
+           aria-keyshortcuts="Shift+Enter"
+           title="${this._escapeHtml(name)} is unavailable • Long press or Shift+Enter for details">
         <ha-icon icon="mdi:alert-circle-outline"
-                 style="color:var(--disabled-text-color);width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>
+                 style="color:var(--secondary-text-color);width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>
         <div class="msic-name">${this._escapeHtml(name)}</div>
+        <div class="msic-time">Unavailable</div>
       </div>
     `;
   }
@@ -643,14 +723,17 @@ class MultiStatusIndicatorCard extends HTMLElement {
       this._handleItemClick(item.dataset.entity);
     });
 
-    // Keyboard navigation support
+    // Keyboard support: Enter or Space toggles; Shift+Enter opens more-info, the keyboard
+    // equivalent of long-press (also for unavailable items, to help diagnose them)
     this._container.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        const item = e.target.closest('.msic-item');
-        if (item && item.dataset.entity && !item.classList.contains('msic-unavailable')) {
-          e.preventDefault();
-          this._handleItemClick(item.dataset.entity);
-        }
+      const item = e.target.closest('.msic-item');
+      if (!item || !item.dataset.entity) return;
+      if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        this._showMoreInfo(item.dataset.entity);
+      } else if ((e.key === 'Enter' || e.key === ' ') && !item.classList.contains('msic-unavailable')) {
+        e.preventDefault();
+        this._handleItemClick(item.dataset.entity);
       }
     });
 

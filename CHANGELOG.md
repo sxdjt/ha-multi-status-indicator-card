@@ -7,6 +7,14 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+## [2026.11.11] - 2026-11-11
+
+### Fixed
+- Card styles now apply. They were added to `document.head`, which cannot reach cards inside HA's shadow roots, so the grid layout, focus outline and muted text never showed.
+- Keyboard: focus stays on the item after the card updates; Shift+Enter opens more-info (keyboard equivalent of long-press).
+- Unavailable items are readable (no 50% opacity) and show an "Unavailable" label.
+- Visual editor: accessible buttons and switch, no false required markers, format hints, and errors for invalid colors. After Remove, focus moves to Add Entity.
+
 ## [2026.7.19] - 2026-07-19
 
 ### Added
