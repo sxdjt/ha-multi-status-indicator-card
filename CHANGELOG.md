@@ -7,6 +7,13 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+## [2026.11.12] - 2026-11-12
+
+Accessibility improvements (screen reader).
+
+### Fixed
+- Visual editor: the Show Last Changed switch is announced by name in current Home Assistant.
+
 ## [2026.11.11] - 2026-11-11
 
 ### Fixed

@@ -22,7 +22,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.11 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.12 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );
@@ -326,7 +326,9 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
             <div class="field"><ha-selector id="name_position"></ha-selector></div>
             <div class="toggle-row">
               <span>Show Last Changed</span>
-              <ha-switch id="show_last_changed" aria-label="Show Last Changed"></ha-switch>
+              <!-- Current HA (Web Awesome) names the switch's inner input only from slotted
+                   text; the host aria-label covers older MWC-based releases -->
+              <ha-switch id="show_last_changed" aria-label="Show Last Changed"><span class="visually-hidden">Show Last Changed</span></ha-switch>
             </div>
           </div>
         </ha-expansion-panel>
