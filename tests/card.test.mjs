@@ -55,9 +55,14 @@ describe('rendering', () => {
   });
 
   // M2 (B4): a numeric 0 name is a valid label
-  test('a YAML `name: 0` is shown as "0"', { todo: 'name uses ||, so 0 falls back to the friendly name' }, () => {
+  test('a YAML `name: 0` is shown as "0"', () => {
     const card = makeCard({ items: [{ entity: 'switch.a', name: 0 }] }, makeHass({ 'switch.a': stateObj('on', { friendly_name: 'Zone' }) }));
     assert.equal(card.querySelector('.msic-name').textContent, '0');
+  });
+
+  test('an empty name falls back to the friendly name', () => {
+    const card = makeCard({ items: [{ entity: 'switch.a', name: '' }] }, makeHass({ 'switch.a': stateObj('on', { friendly_name: 'Zone' }) }));
+    assert.equal(card.querySelector('.msic-name').textContent, 'Zone');
   });
 });
 

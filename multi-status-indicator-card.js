@@ -21,6 +21,9 @@ window.customCards.push({
   }
 });
 
+// A YAML name can be a number (`name: 0`); only a missing or empty name falls back
+const hasName = (name) => name != null && name !== '';
+
 console.info(
   `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.12 `,
   'color: black; background: #F2720C; font-weight: 600;',
@@ -120,7 +123,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     this._config.items.forEach((item, index) => {
       const panel = document.createElement('ha-expansion-panel');
       panel.outlined = true;
-      panel.header = item.name || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+      panel.header = (hasName(item.name) ? String(item.name) : '') || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
 
       const content = document.createElement('div');
       content.className = 'panel-content';
@@ -150,7 +153,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       nameField.selector = { text: {} };
       nameField.required = false;
       nameField.label = 'Custom Name';
-      nameField.value = item.name || '';
+      nameField.value = hasName(item.name) ? String(item.name) : '';
       nameField.addEventListener('value-changed', (e) => {
         e.stopPropagation();
         this._updateEntity(index, 'name', e.detail.value);
@@ -618,7 +621,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
   _renderItem(item, hass, options) {
     const stateObj = hass.states[item.entity];
-    const name = item.name || stateObj?.attributes?.friendly_name || item.entity;
+    const name = hasName(item.name) ? item.name : (stateObj?.attributes?.friendly_name || item.entity);
 
     // Handle missing or unavailable entities
     if (!stateObj || ['unavailable', 'unknown'].includes(stateObj.state)) {

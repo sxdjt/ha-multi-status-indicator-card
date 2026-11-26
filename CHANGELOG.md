@@ -11,6 +11,7 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 - Tapping a `binary_sensor` no longer fails with "Failed to toggle": it called `binary_sensor.turn_on`/`turn_off`, which do not exist. Read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) now do nothing on tap.
 - Other on/off entities such as `group` are switched with `homeassistant.turn_on`/`turn_off`; `group.turn_off` does not exist.
 - A `media_player` that is paused, idle or in standby shows OFF, and a tap now calls `turn_on` to match; it called `turn_off`.
+- A numeric `name: 0` is shown as "0" on the card and in the editor; it fell back to the friendly name.
 - Screen readers no longer announce read-only items as "tap to toggle", and those items have no pressed state.
 
 ### Security

@@ -33,3 +33,12 @@ describe('card settings', () => {
     assert.equal(editor.shadowRoot.querySelectorAll('ha-expansion-panel').length, 3);
   });
 });
+
+describe('entity panels', () => {
+  test('a numeric name 0 shows in the name field and the panel header', () => {
+    const editor = makeEditor({ items: [{ entity: 'switch.a', name: 0 }] });
+    const panel = editor.shadowRoot.querySelector('#entities-list ha-expansion-panel');
+    assert.equal(panel.header, '0');
+    assert.equal(panel.querySelectorAll('ha-selector')[1].value, '0');
+  });
+});
