@@ -27,38 +27,42 @@ Yes, this is similar to the default HA [Glance card](https://www.home-assistant.
 
 ## Installation
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=sxdjt&repository=multi-status-indicator-card)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=sxdjt&repository=ha-multi-status-indicator-card)
    
 
 ## Configuration
 
-| Option              | Type    | Default   | Description                                    |
-| ------------------- | ------- | --------- | ---------------------------------------------- |
-| `title`             | string  | —         | Optional card title                            |
-| `columns`           | number  | 3         | Number of columns in the grid layout           |
-| `color_on`          | string  | `"green"` | Default color when entity is ON                |
-| `color_off`         | string  | `"red"`   | Default color when entity is OFF               |
-| `icon_size`         | string  | `"20px"`  | Size of the icons                              |
-| `font_size`         | string  | `"11px"`  | Font size for item names                       |
-| `show_last_changed` | boolean | `true`    | Show last-changed timestamp                    |
+| Option              | Type    | Default   | Description                                     |
+| ------------------- | ------- | --------- | ----------------------------------------------- |
+| `color_off`         | string  | `"red"`   | Default color when entity is OFF                |
+| `color_on`          | string  | `"green"` | Default color when entity is ON                 |
+| `columns`           | number  | 3         | Number of columns in the grid layout            |
+| `font_size`         | string  | `"11px"`  | Font size for item names                        |
+| `icon_size`         | string  | `"20px"`  | Size of the icons                               |
+| `items`             | array   | -         | List of entities to show (see below)            |
 | `name_position`     | string  | `"below"` | Position of entity name: `"above"` or `"below"` |
-| `items`             | array   | —         | List of entities to show (see below)           |
+| `show_last_changed` | boolean | `true`    | Show last-changed timestamp                     |
+| `title`             | string  | -         | Optional card title                             |
+
+Every option, card-level and per-item, can also be set in the visual editor.
 
 ### Item Options
 
-| Option              | Type    | Default                             | Description                                |
-| ------------------- | ------- | ----------------------------------- | ------------------------------------------ |
-| `entity`            | string  | —                                   | The entity to monitor (required)           |
-| `name`              | string  | Friendly name or entity ID fallback | Label shown with the icon                  |
-| `icon_on`           | string  | `'mdi:toggle-switch'`               | Icon when state is ON                      |
-| `icon_off`          | string  | `'mdi:toggle-switch-off'`           | Icon when state is OFF                     |
-| `color_on`          | string  | Inherits from global `color_on`     | Override ON color for this item            |
-| `color_off`         | string  | Inherits from global `color_off`    | Override OFF color for this item           |
-| `show_last_changed` | boolean | Inherits from global setting        | Override show_last_changed for this item   |
+| Option              | Type    | Default                             | Description                              |
+| ------------------- | ------- | ----------------------------------- | ---------------------------------------- |
+| `color_off`         | string  | Inherits from global `color_off`    | Override OFF color for this item         |
+| `color_on`          | string  | Inherits from global `color_on`     | Override ON color for this item          |
+| `entity`            | string  | -                                   | The entity to monitor (required)         |
+| `icon_off`          | string  | `'mdi:toggle-switch-off'`           | Icon when state is OFF                   |
+| `icon_on`           | string  | `'mdi:toggle-switch'`               | Icon when state is ON                    |
+| `name`              | string  | Friendly name or entity ID fallback | Label shown with the icon                |
+| `show_last_changed` | boolean | Inherits from global setting        | Override show_last_changed for this item |
+
+Items without an `entity` are skipped.
 
 ## Supported Entity Types
 
-The card automatically handles toggling for these entity domains:
+Tapping an item calls a service based on the entity's domain:
 
 - `switch` - toggle
 - `light` - toggle
@@ -70,8 +74,29 @@ The card automatically handles toggling for these entity domains:
 - `climate` - turn_on/turn_off
 - `media_player` - turn_on/turn_off
 
-For other entity types with on/off states, the card will attempt a generic turn_on/turn_off service call.
+For any other domain, the card calls `turn_on` or `turn_off` only when the state is exactly `on` or `off`. Otherwise tapping does nothing.
 
+### When an item counts as ON
+
+ON uses `icon_on` and `color_on`; everything else uses the OFF icon and color.
+
+| Domain                     | ON when                                          |
+| -------------------------- | ------------------------------------------------ |
+| `cover`                    | state is `open`, or `current_position` is above 0 |
+| `climate`                  | state is anything except `off`                   |
+| `lock`                     | state is `unlocked`                              |
+| `media_player`             | state is `playing` or `on`                       |
+| `person`, `device_tracker` | state is `home`                                  |
+| all others                 | state is `on`                                    |
+
+An entity that is missing, `unavailable` or `unknown` shows a muted alert icon and an "Unavailable" label instead of its colors. It cannot be toggled, but long-press still opens its more-info dialog.
+
+## Interaction
+
+| Action                                | Result                 |
+| ------------------------------------- | ---------------------- |
+| Tap, click, Enter or Space            | Toggle the entity      |
+| Long-press (0.5 s) or Shift+Enter     | Open more-info dialog  |
 
 ## Example Usage
 
