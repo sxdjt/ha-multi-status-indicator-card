@@ -1,3 +1,5 @@
 .DS_Store
 CLAUDE.md
 claude.md
+node_modules/
+coverage/

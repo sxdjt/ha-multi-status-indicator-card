@@ -1,0 +1,16 @@
+{
+  "name": "ha-multi-status-indicator-card",
+  "private": true,
+  "description": "Development tooling only. The card itself is multi-status-indicator-card.js and has no build step or runtime dependencies.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/",
+    "coverage": "node --test --experimental-test-coverage --test-coverage-include=multi-status-indicator-card.js tests/"
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "devDependencies": {
+    "happy-dom": "^21.0.4"
+  }
+}

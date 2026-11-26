@@ -1,0 +1,103 @@
+import { test, describe, afterEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { Card, makeCard, makeHass, stateObj, items, cleanup, window } from './helpers/env.mjs';
+
+afterEach(cleanup);
+
+describe('registration', () => {
+  test('defines the card and editor and adds a card picker entry', () => {
+    assert.ok(Card);
+    const entry = window.customCards.find((c) => c.type === 'multi-status-indicator-card');
+    assert.equal(entry.preview, true);
+  });
+});
+
+describe('rendering', () => {
+  test('applies documented defaults: 3 columns, green/red, 20px icons, 11px names, name below', () => {
+    const card = makeCard(
+      { items: [{ entity: 'switch.a' }, { entity: 'switch.b' }] },
+      makeHass({ 'switch.a': 'on', 'switch.b': 'off' }),
+    );
+    const grid = card.querySelector('.msic-grid');
+    assert.match(grid.getAttribute('style'), /repeat\(3, 1fr\)/);
+    assert.match(grid.getAttribute('style'), /font-size: 11px/);
+    const [on, off] = items(card).map((i) => i.querySelector('ha-icon'));
+    assert.equal(on.getAttribute('icon'), 'mdi:toggle-switch');
+    assert.match(on.getAttribute('style'), /color:green;width:20px/);
+    assert.equal(off.getAttribute('icon'), 'mdi:toggle-switch-off');
+    assert.match(off.getAttribute('style'), /color:red/);
+    assert.equal(items(card)[0].firstElementChild.tagName, 'HA-ICON');
+  });
+
+  test('shows "Add entities to display" when no item has an entity', () => {
+    const card = makeCard({ items: [{ name: 'x' }] });
+    assert.match(card.textContent, /Add entities to display/);
+  });
+
+  test('missing, unavailable and unknown entities render as unavailable', () => {
+    const card = makeCard(
+      { items: [{ entity: 'switch.gone' }, { entity: 'switch.u' }, { entity: 'switch.k' }] },
+      makeHass({ 'switch.u': 'unavailable', 'switch.k': 'unknown' }),
+    );
+    for (const item of items(card)) {
+      assert.ok(item.classList.contains('msic-unavailable'));
+      assert.equal(item.querySelector('.msic-time').textContent, 'Unavailable');
+    }
+  });
+
+  test('escapes names', () => {
+    const card = makeCard({ items: [{ entity: 'switch.a', name: '<b>x</b>' }] }, makeHass({ 'switch.a': 'on' }));
+    assert.equal(card.querySelector('b'), null);
+    assert.equal(card.querySelector('.msic-name').textContent, '<b>x</b>');
+  });
+
+  // M2 (B4): a numeric 0 name is a valid label
+  test('a YAML `name: 0` is shown as "0"', { todo: 'name uses ||, so 0 falls back to the friendly name' }, () => {
+    const card = makeCard({ items: [{ entity: 'switch.a', name: 0 }] }, makeHass({ 'switch.a': stateObj('on', { friendly_name: 'Zone' }) }));
+    assert.equal(card.querySelector('.msic-name').textContent, '0');
+  });
+});
+
+describe('interaction', () => {
+  test('click on a switch calls switch.toggle', async () => {
+    const hass = makeHass({ 'switch.a': 'on' });
+    const card = makeCard({ items: [{ entity: 'switch.a' }] }, hass);
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.deepEqual(hass.calls, [{ domain: 'switch', service: 'toggle', data: { entity_id: 'switch.a' } }]);
+  });
+
+  // M1 (B8): binary_sensor has no turn_on/turn_off service
+  test('tapping a binary_sensor calls no service', { todo: 'falls back to binary_sensor.turn_off, which HA rejects' }, async () => {
+    const hass = makeHass({ 'binary_sensor.door': 'on' });
+    const card = makeCard({ items: [{ entity: 'binary_sensor.door' }] }, hass);
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.deepEqual(hass.calls, []);
+  });
+
+  // M1 (B8): read-only items must not announce an action that does nothing
+  test('read-only items do not say "tap to toggle"', { todo: 'aria-label and title always say tap to toggle' }, () => {
+    const card = makeCard(
+      { items: [{ entity: 'binary_sensor.door' }, { entity: 'person.sam' }] },
+      makeHass({ 'binary_sensor.door': 'on', 'person.sam': 'home' }),
+    );
+    for (const item of items(card)) {
+      assert.doesNotMatch(item.getAttribute('aria-label'), /toggle/i);
+      assert.doesNotMatch(item.getAttribute('title'), /toggle/i);
+    }
+  });
+});
+
+describe('sizing', () => {
+  // M3: getCardSize should agree with getGridOptions
+  test('getCardSize ignores items without an entity and counts the title', { todo: 'counts every item, ignores the title' }, () => {
+    const card = makeCard({ title: 'T', columns: 3, items: [{ entity: 'switch.a' }, { name: 'blank' }, {}, {}] });
+    assert.equal(card.getCardSize(), 2);
+  });
+
+  test('getGridOptions counts rows of valid items plus the title', () => {
+    const card = makeCard({ title: 'T', columns: 2, items: [{ entity: 'a.a' }, { entity: 'a.b' }, { entity: 'a.c' }, {}] });
+    assert.deepEqual(card.getGridOptions(), { rows: 3, columns: 6, min_rows: 1, min_columns: 3 });
+  });
+});
