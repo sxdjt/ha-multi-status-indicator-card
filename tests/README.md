@@ -15,6 +15,10 @@ The tests load `multi-status-indicator-card.js`, the same file Home Assistant lo
 
 Home Assistant's own elements (`ha-selector`, `ha-switch`, `ha-button`, `ha-icon`, ...) are not defined, so they behave as plain elements: tests check the properties the card sets on them and fire their events by hand.
 
+IMPORTANT: never pass a DOM node to `assert` (`assert.equal(el, null)`, `assert.equal(a, b)` on elements, `deepEqual` on nodes). When such an assertion fails, Node builds the error message by inspecting the node, which walks the whole happy-dom window and grows memory without bound (2026-11-25: over 70 GB). Assert on strings, numbers or booleans instead: `querySelectorAll(sel).length`, `textContent`, `getAttribute()`, or `assert.ok(a === b, 'message')`.
+
+`npm test` runs under `tests/run-capped.sh`, which kills the run if it passes 1 GB of memory or 60 seconds (`MAX_RSS_MB`, `MAX_SECONDS` to override). Node's `--max-old-space-size` does not bound happy-dom and macOS ignores `ulimit -v`, so the cap is enforced from outside. Run single files the same way: `tests/run-capped.sh node --test tests/card.test.mjs`.
+
 `CSS.supports` is replaced with a small deterministic color check, because happy-dom's accepts any value.
 
 ## Coverage

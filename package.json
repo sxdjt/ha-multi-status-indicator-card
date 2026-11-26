@@ -4,8 +4,8 @@
   "description": "Development tooling only. The card itself is multi-status-indicator-card.js and has no build step or runtime dependencies.",
   "license": "MIT",
   "scripts": {
-    "test": "node --test tests/",
-    "coverage": "node --test --experimental-test-coverage --test-coverage-include=multi-status-indicator-card.js tests/"
+    "test": "tests/run-capped.sh node --test --test-timeout=10000 --test-concurrency=1 tests/",
+    "coverage": "tests/run-capped.sh node --test --test-timeout=10000 --test-concurrency=1 --experimental-test-coverage --test-coverage-include=multi-status-indicator-card.js tests/"
   },
   "engines": {
     "node": ">=20.11"

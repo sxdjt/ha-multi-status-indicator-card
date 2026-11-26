@@ -14,7 +14,19 @@
 import { createRequire } from 'node:module';
 import { Window } from 'happy-dom';
 
-export const window = new Window({ url: 'http://localhost:8123/' });
+// The card is loaded with require(), not by happy-dom, so happy-dom never needs to run
+// scripts or fetch anything. Disabling both keeps injected markup in the escaping tests
+// (`onerror=`, `<img src=x>`) inert and stops pending fetches from holding the process open.
+export const window = new Window({
+  url: 'http://localhost:8123/',
+  settings: {
+    disableJavaScriptEvaluation: true,
+    disableJavaScriptFileLoading: true,
+    disableCSSFileLoading: true,
+    disableIframePageLoading: true,
+    handleDisabledFileLoadingAsSuccess: true,
+  },
+});
 
 // The globals the card touches, taken from the happy-dom window
 for (const key of ['document', 'HTMLElement', 'customElements', 'CustomEvent', 'Event', 'CSS', 'KeyboardEvent', 'MouseEvent', 'PointerEvent']) {

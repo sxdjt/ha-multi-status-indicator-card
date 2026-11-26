@@ -47,7 +47,7 @@ describe('rendering', () => {
 
   test('escapes names', () => {
     const card = makeCard({ items: [{ entity: 'switch.a', name: '<b>x</b>' }] }, makeHass({ 'switch.a': 'on' }));
-    assert.equal(card.querySelector('b'), null);
+    assert.equal(card.querySelectorAll('b').length, 0, 'name markup was rendered as HTML');
     assert.equal(card.querySelector('.msic-name').textContent, '<b>x</b>');
   });
 
