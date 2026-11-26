@@ -20,16 +20,6 @@ describe('M5 (B7): media_player tap matches what is shown', () => {
   });
 });
 
-describe('M1 (B8): fallback service exists', () => {
-  test('a group that is on is turned off with homeassistant.turn_off', { todo: 'calls group.turn_off, which does not exist' }, async () => {
-    const hass = makeHass({ 'group.lights': 'on' });
-    const card = makeCard({ items: [{ entity: 'group.lights' }] }, hass);
-    items(card)[0].click();
-    await Promise.resolve();
-    assert.deepEqual(hass.calls[0], { domain: 'homeassistant', service: 'turn_off', data: { entity_id: 'group.lights' } });
-  });
-});
-
 describe('M6 (B10): editor follows setConfig after the first render', () => {
   test('a YAML edit shows in the visual editor', { todo: 'setConfig renders only once, fields stay stale' }, () => {
     const editor = makeEditor({ title: 'Old', items: [{ entity: 'switch.a' }] });

@@ -71,7 +71,7 @@ describe('interaction', () => {
   });
 
   // M1 (B8): binary_sensor has no turn_on/turn_off service
-  test('tapping a binary_sensor calls no service', { todo: 'falls back to binary_sensor.turn_off, which HA rejects' }, async () => {
+  test('tapping a binary_sensor calls no service', async () => {
     const hass = makeHass({ 'binary_sensor.door': 'on' });
     const card = makeCard({ items: [{ entity: 'binary_sensor.door' }] }, hass);
     items(card)[0].click();
@@ -80,7 +80,7 @@ describe('interaction', () => {
   });
 
   // M1 (B8): read-only items must not announce an action that does nothing
-  test('read-only items do not say "tap to toggle"', { todo: 'aria-label and title always say tap to toggle' }, () => {
+  test('read-only items do not say "tap to toggle"', () => {
     const card = makeCard(
       { items: [{ entity: 'binary_sensor.door' }, { entity: 'person.sam' }] },
       makeHass({ 'binary_sensor.door': 'on', 'person.sam': 'home' }),
@@ -135,5 +135,42 @@ describe('escaping', () => {
     items(card)[0].focus();
     card.hass = makeHass({ [id]: 'off' });
     assert.equal(card.ownerDocument.activeElement.dataset.entity, id);
+  });
+});
+
+describe('fallback service', () => {
+  test('a group that is on is turned off with homeassistant.turn_off', async () => {
+    const hass = makeHass({ 'group.lights': 'on' });
+    const card = makeCard({ items: [{ entity: 'group.lights' }] }, hass);
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.deepEqual(hass.calls[0], { domain: 'homeassistant', service: 'turn_off', data: { entity_id: 'group.lights' } });
+  });
+
+  test('a switch-like entity outside the domain table that is off is turned on', async () => {
+    const hass = makeHass({ 'siren.alarm': 'off' });
+    const card = makeCard({ items: [{ entity: 'siren.alarm' }] }, hass);
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.deepEqual(hass.calls[0], { domain: 'homeassistant', service: 'turn_on', data: { entity_id: 'siren.alarm' } });
+  });
+
+  test('an entity whose state is not on/off calls nothing', async () => {
+    const hass = makeHass({ 'vacuum.robbie': 'docked' });
+    const card = makeCard({ items: [{ entity: 'vacuum.robbie' }] }, hass);
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.deepEqual(hass.calls, []);
+    assert.doesNotMatch(items(card)[0].getAttribute('aria-label'), /toggle/);
+  });
+
+  test('a toggleable item keeps aria-pressed; a read-only one has none', () => {
+    const card = makeCard(
+      { items: [{ entity: 'switch.a' }, { entity: 'binary_sensor.b' }] },
+      makeHass({ 'switch.a': 'on', 'binary_sensor.b': 'on' }),
+    );
+    const [toggle, readOnly] = items(card);
+    assert.equal(toggle.getAttribute('aria-pressed'), 'true');
+    assert.equal(readOnly.hasAttribute('aria-pressed'), false);
   });
 });

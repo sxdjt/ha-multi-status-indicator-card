@@ -7,6 +7,11 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+### Fixed
+- Tapping a `binary_sensor` no longer fails with "Failed to toggle": it called `binary_sensor.turn_on`/`turn_off`, which do not exist. Read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) now do nothing on tap.
+- Other on/off entities such as `group` are switched with `homeassistant.turn_on`/`turn_off`; `group.turn_off` does not exist.
+- Screen readers no longer announce read-only items as "tap to toggle", and those items have no pressed state.
+
 ### Security
 - Entity states, friendly names and config values are escaped before they are written into the card's HTML. A state or name containing `"` could add attributes (including event handlers) to an item; config values (entity, icons, colors, sizes, columns) were inserted raw.
 

@@ -627,6 +627,8 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     const state = stateObj.state;
     const isOn = this._isOn(item.entity, stateObj);
+    // Only items a tap acts on are announced as toggles
+    const canToggle = this._getService(item.entity.split('.')[0], state) !== null;
     const color = isOn
       ? (item.color_on || options.color_on)
       : (item.color_off || options.color_off);
@@ -658,10 +660,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
            data-entity="${this._escapeHtml(item.entity)}"
            role="button"
            tabindex="0"
-           aria-label="${this._escapeHtml(name)}, ${this._escapeHtml(state)}, tap to toggle"
-           aria-pressed="${isOn}"
+           aria-label="${this._escapeHtml(name)}, ${this._escapeHtml(state)}${canToggle ? ', tap to toggle' : ''}"
+           ${canToggle ? `aria-pressed="${isOn}"` : ''}
            aria-keyshortcuts="Shift+Enter"
-           title="Tap to toggle • Long press or Shift+Enter for details">
+           title="${canToggle ? 'Tap to toggle • ' : ''}Long press or Shift+Enter for details">
         ${content}
       </div>
     `;
@@ -779,17 +781,22 @@ class MultiStatusIndicatorCard extends HTMLElement {
       const stateObj = this._hass.states[entity];
       if (!stateObj) return;
 
-      const service = this._getService(domain, stateObj.state);
+      const action = this._getService(domain, stateObj.state);
 
-      if (service) {
-        await this._hass.callService(domain, service, { entity_id: entity });
+      if (action) {
+        await this._hass.callService(action.domain, action.service, { entity_id: entity });
       }
     } catch (err) {
       this._showError(`Failed to toggle ${entity}: ${err.message}`);
     }
   }
 
+  // Returns the { domain, service } a tap calls, or null when a tap does nothing
   _getService(domain, state) {
+    // Read-only domains have no on/off service; a binary_sensor reads on/off but
+    // binary_sensor.turn_off does not exist, so the call failed with an error
+    if (MultiStatusIndicatorCard.READ_ONLY_DOMAINS.includes(domain)) return null;
+
     // Handle different entity domains
     const domainServices = {
       switch: 'toggle',
@@ -809,13 +816,14 @@ class MultiStatusIndicatorCard extends HTMLElement {
     }
 
     if (service) {
-      return service;
+      return { domain, service };
     }
 
-    // Fallback: try generic toggle or turn_on/turn_off
-    const hasToggle = ['on', 'off'].includes(state);
-    if (hasToggle) {
-      return state === 'off' ? 'turn_on' : 'turn_off';
+    // Fallback for other on/off entities (group, siren, humidifier, ...): the
+    // homeassistant.* services work for any domain, unlike <domain>.turn_on, which
+    // does not exist for some (group)
+    if (['on', 'off'].includes(state)) {
+      return { domain: 'homeassistant', service: state === 'off' ? 'turn_on' : 'turn_off' };
     }
 
     return null;
@@ -847,6 +855,9 @@ class MultiStatusIndicatorCard extends HTMLElement {
     div.textContent = String(value);
     return div.innerHTML.replace(/"/g, '&quot;');
   }
+
+  // Domains whose entities only report a state: a tap calls nothing
+  static READ_ONLY_DOMAINS = ['binary_sensor', 'sensor', 'person', 'device_tracker', 'sun', 'weather', 'zone', 'event'];
 
   getCardSize() {
     return Math.ceil((this._config?.items?.length || 0) / (this._config?.columns || 3));

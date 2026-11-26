@@ -74,7 +74,9 @@ Tapping an item calls a service based on the entity's domain:
 - `climate` - turn_on/turn_off
 - `media_player` - turn_on/turn_off
 
-For any other domain, the card calls `turn_on` or `turn_off` only when the state is exactly `on` or `off`. Otherwise tapping does nothing.
+For any other domain whose state is exactly `on` or `off` (for example `group`, `siren`, `humidifier`), the card calls `homeassistant.turn_on` or `homeassistant.turn_off`.
+
+Tapping does nothing for read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) and for any other entity whose state is not `on`/`off`. Those items still show their state and open more-info on long-press, and screen readers do not announce them as toggles.
 
 ### When an item counts as ON
 
