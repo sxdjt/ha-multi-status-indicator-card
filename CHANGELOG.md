@@ -13,6 +13,7 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 - A `media_player` that is paused, idle or in standby shows OFF, and a tap now calls `turn_on` to match; it called `turn_off`.
 - A numeric `name: 0` is shown as "0" on the card and in the editor; it fell back to the friendly name.
 - Masonry view height (`getCardSize`) counts the title and skips items without an entity, matching the sections view.
+- Visual editor: after a YAML edit, the fields and entity panels show the new config. The editor only drew its fields once, so it kept showing the old values.
 - Screen readers no longer announce read-only items as "tap to toggle", and those items have no pressed state.
 
 ### Security

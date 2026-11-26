@@ -9,23 +9,6 @@ afterEach(cleanup);
 const ITEM_ATTRS = ['class', 'data-entity', 'role', 'tabindex', 'aria-label', 'aria-pressed', 'aria-disabled', 'aria-keyshortcuts', 'title'];
 const unexpectedAttrs = (el) => [...el.attributes].map((a) => a.name).filter((n) => !ITEM_ATTRS.includes(n));
 
-describe('M6 (B10): editor follows setConfig after the first render', () => {
-  test('a YAML edit shows in the visual editor', { todo: 'setConfig renders only once, fields stay stale' }, () => {
-    const editor = makeEditor({ title: 'Old', items: [{ entity: 'switch.a' }] });
-    editor.setConfig({ title: 'New', items: [{ entity: 'switch.a' }, { entity: 'switch.b' }] });
-    assert.equal(editor.shadowRoot.getElementById('title').value, 'New');
-    assert.equal(editor.shadowRoot.querySelectorAll('#entities-list ha-expansion-panel').length, 2);
-  });
-
-  test('the editor\'s own changes do not rebuild it (focus is kept)', () => {
-    const editor = makeEditor({ items: [] });
-    const field = editor.shadowRoot.getElementById('title');
-    fireValue(field, 'Typing');
-    editor.setConfig(editor.changes.at(-1));
-    assert.ok(editor.shadowRoot.getElementById('title') === field, 'title field was rebuilt');
-  });
-});
-
 describe('M7: holding Enter toggles once', () => {
   test('auto-repeated keydown is ignored', { todo: 'e.repeat is not checked' }, async () => {
     const hass = makeHass({ 'switch.a': 'off' });

@@ -43,11 +43,15 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
   setConfig(config) {
     this._config = { ...config };
     if (!this._config.items) this._config.items = [];
-    // Only render once to preserve focus
-    if (!this._rendered) {
+    // HA hands every config-changed back through setConfig; rebuilding then would drop
+    // focus mid-typing. Rebuild only for a config the editor did not produce itself,
+    // such as a YAML edit (HA calls setConfig on this same element).
+    const incoming = JSON.stringify(this._config);
+    if (!this._rendered || incoming !== this._lastFired) {
       this.render();
       this._rendered = true;
     }
+    this._lastFired = incoming;
   }
 
   set hass(hass) {
@@ -56,6 +60,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
   }
 
   _fire() {
+    this._lastFired = JSON.stringify(this._config);
     this.dispatchEvent(new CustomEvent('config-changed', {
       bubbles: true, composed: true,
       detail: { config: this._config }

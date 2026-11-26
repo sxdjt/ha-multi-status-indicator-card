@@ -42,3 +42,28 @@ describe('entity panels', () => {
     assert.equal(panel.querySelectorAll('ha-selector')[1].value, '0');
   });
 });
+
+describe('setConfig after the first render', () => {
+  test('a YAML edit shows in the visual editor', () => {
+    const editor = makeEditor({ title: 'Old', items: [{ entity: 'switch.a' }] });
+    editor.setConfig({ title: 'New', items: [{ entity: 'switch.a' }, { entity: 'switch.b' }] });
+    assert.equal(editor.shadowRoot.getElementById('title').value, 'New');
+    assert.equal(editor.shadowRoot.querySelectorAll('#entities-list ha-expansion-panel').length, 2);
+  });
+
+  test('the editor\'s own changes do not rebuild it (focus is kept)', () => {
+    const editor = makeEditor({ items: [] });
+    const field = editor.shadowRoot.getElementById('title');
+    fireValue(field, 'Typing');
+    editor.setConfig(editor.changes.at(-1));
+    assert.ok(editor.shadowRoot.getElementById('title') === field, 'title field was rebuilt');
+  });
+
+  test('an item edit handed back by HA does not rebuild the panels', () => {
+    const editor = makeEditor({ items: [{ entity: 'switch.a' }] });
+    const panel = editor.shadowRoot.querySelector('#entities-list ha-expansion-panel');
+    fireValue(panel.querySelectorAll('ha-selector')[1], 'Zone');
+    editor.setConfig(editor.changes.at(-1));
+    assert.ok(editor.shadowRoot.querySelector('#entities-list ha-expansion-panel') === panel, 'panel was rebuilt');
+  });
+});
