@@ -9,30 +9,6 @@ afterEach(cleanup);
 const ITEM_ATTRS = ['class', 'data-entity', 'role', 'tabindex', 'aria-label', 'aria-pressed', 'aria-disabled', 'aria-keyshortcuts', 'title'];
 const unexpectedAttrs = (el) => [...el.attributes].map((a) => a.name).filter((n) => !ITEM_ATTRS.includes(n));
 
-describe('M4 (B11): values written into innerHTML are escaped', () => {
-  test('an entity state cannot add attributes', { todo: 'state is interpolated into aria-label unescaped' }, () => {
-    const card = makeCard({ items: [{ entity: 'sensor.s' }] }, makeHass({ 'sensor.s': 'x" onfocus="alert(1)' }));
-    assert.deepEqual(unexpectedAttrs(items(card)[0]), []);
-  });
-
-  test('a friendly name cannot add attributes', { todo: '_escapeHtml does not encode quotes' }, () => {
-    const card = makeCard(
-      { items: [{ entity: 'switch.a' }, { entity: 'switch.gone', name: 'g" onfocus="alert(1)' }] },
-      makeHass({ 'switch.a': stateObj('on', { friendly_name: 'n" onfocus="alert(1)' }) }),
-    );
-    for (const item of items(card)) assert.deepEqual(unexpectedAttrs(item), []);
-  });
-
-  test('config strings cannot add attributes or elements', { todo: 'entity, icon, colors and sizes are interpolated raw' }, () => {
-    const inj = '"><img src=x onerror=alert(1)>';
-    const card = makeCard(
-      { columns: `3${inj}`, font_size: inj, icon_size: inj, color_on: inj, items: [{ entity: `switch.a${inj}` }, { entity: 'switch.b', icon_on: inj }] },
-      makeHass({ [`switch.a${inj}`]: 'on', 'switch.b': 'on' }),
-    );
-    assert.equal(card.querySelectorAll('img').length, 0, 'injected <img> was rendered');
-  });
-});
-
 describe('M5 (B7): media_player tap matches what is shown', () => {
   test('a paused player shows OFF, so a tap turns it on', { todo: 'shown OFF but tap calls turn_off' }, async () => {
     const hass = makeHass({ 'media_player.tv': 'paused' });

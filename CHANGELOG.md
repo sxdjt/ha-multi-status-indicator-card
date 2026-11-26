@@ -7,6 +7,9 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+### Security
+- Entity states, friendly names and config values are escaped before they are written into the card's HTML. A state or name containing `"` could add attributes (including event handlers) to an item; config values (entity, icons, colors, sizes, columns) were inserted raw.
+
 ## [2026.11.12] - 2026-11-12
 
 Accessibility improvements (screen reader).

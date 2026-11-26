@@ -591,7 +591,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     const html = `
       ${title ? `<div class="msic-title">${this._escapeHtml(title)}</div>` : ''}
-      <div class="msic-grid" style="grid-template-columns: repeat(${columns}, 1fr); font-size: ${font_size};">
+      <div class="msic-grid" style="grid-template-columns: repeat(${this._escapeHtml(columns)}, 1fr); font-size: ${this._escapeHtml(font_size)};">
         ${validItems.map(item => this._renderItem(item, hass, {
           icon_size, font_size, show_last_changed, color_on, color_off, name_position
         })).join('')}
@@ -601,7 +601,9 @@ class MultiStatusIndicatorCard extends HTMLElement {
     this._container.innerHTML = html;
 
     if (focusedEntity) {
-      this._container.querySelector(`.msic-item[data-entity="${CSS.escape(focusedEntity)}"]`)?.focus();
+      // Compare dataset values rather than building a selector from the entity id
+      [...this._container.querySelectorAll('.msic-item')]
+        .find((el) => el.dataset.entity === focusedEntity)?.focus();
     }
 
     // Hydrate the HA-native relative-time elements. They self-update and localize, but
@@ -638,12 +640,13 @@ class MultiStatusIndicatorCard extends HTMLElement {
       : options.show_last_changed;
 
     const nameHtml = `<div class="msic-name">${this._escapeHtml(name)}</div>`;
-    const iconHtml = `<ha-icon icon="${icon}" style="color:${color};width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>`;
+    const size = this._escapeHtml(options.icon_size);
+    const iconHtml = `<ha-icon icon="${this._escapeHtml(icon)}" style="color:${this._escapeHtml(color)};width:${size};height:${size};margin-bottom:2px"></ha-icon>`;
 
     // Use HA's native relative-time element (self-updating, localized) when shown. Always
     // reserve the row (hidden spacer when off) so items stay vertically aligned in the grid.
     const lastChangedHtml = showLastChanged
-      ? `<ha-relative-time class="msic-time" data-datetime="${stateObj.last_changed}"></ha-relative-time>`
+      ? `<ha-relative-time class="msic-time" data-datetime="${this._escapeHtml(stateObj.last_changed)}"></ha-relative-time>`
       : `<div class="msic-time" style="visibility:hidden">&nbsp;</div>`;
 
     const content = options.name_position === 'above'
@@ -652,10 +655,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     return `
       <div class="msic-item"
-           data-entity="${item.entity}"
+           data-entity="${this._escapeHtml(item.entity)}"
            role="button"
            tabindex="0"
-           aria-label="${this._escapeHtml(name)}, ${state}, tap to toggle"
+           aria-label="${this._escapeHtml(name)}, ${this._escapeHtml(state)}, tap to toggle"
            aria-pressed="${isOn}"
            aria-keyshortcuts="Shift+Enter"
            title="Tap to toggle • Long press or Shift+Enter for details">
@@ -670,7 +673,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
     // disabled via the click handler's guard.
     return `
       <div class="msic-item msic-unavailable"
-           data-entity="${item.entity}"
+           data-entity="${this._escapeHtml(item.entity)}"
            role="button"
            tabindex="0"
            aria-disabled="true"
@@ -678,7 +681,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
            aria-keyshortcuts="Shift+Enter"
            title="${this._escapeHtml(name)} is unavailable • Long press or Shift+Enter for details">
         <ha-icon icon="mdi:alert-circle-outline"
-                 style="color:var(--secondary-text-color);width:${options.icon_size};height:${options.icon_size};margin-bottom:2px"></ha-icon>
+                 style="color:var(--secondary-text-color);width:${this._escapeHtml(options.icon_size)};height:${this._escapeHtml(options.icon_size)};margin-bottom:2px"></ha-icon>
         <div class="msic-name">${this._escapeHtml(name)}</div>
         <div class="msic-time">Unavailable</div>
       </div>
@@ -836,10 +839,13 @@ class MultiStatusIndicatorCard extends HTMLElement {
     this.dispatchEvent(event);
   }
 
-  _escapeHtml(text) {
+  // Escape a value for innerHTML, in text and in double-quoted attributes. div.innerHTML
+  // encodes <, > and & but not ", so quotes are encoded too (same helper as rachio-card).
+  _escapeHtml(value) {
+    if (value == null) return '';
     const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    div.textContent = String(value);
+    return div.innerHTML.replace(/"/g, '&quot;');
   }
 
   getCardSize() {

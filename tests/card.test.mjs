@@ -4,6 +4,9 @@ import { Card, makeCard, makeHass, stateObj, items, cleanup, window } from './he
 
 afterEach(cleanup);
 
+const ITEM_ATTRS = ['class', 'data-entity', 'role', 'tabindex', 'aria-label', 'aria-pressed', 'aria-disabled', 'aria-keyshortcuts', 'title'];
+const unexpectedAttrs = (el) => [...el.attributes].map((a) => a.name).filter((n) => !ITEM_ATTRS.includes(n));
+
 describe('registration', () => {
   test('defines the card and editor and adds a card picker entry', () => {
     assert.ok(Card);
@@ -99,5 +102,38 @@ describe('sizing', () => {
   test('getGridOptions counts rows of valid items plus the title', () => {
     const card = makeCard({ title: 'T', columns: 2, items: [{ entity: 'a.a' }, { entity: 'a.b' }, { entity: 'a.c' }, {}] });
     assert.deepEqual(card.getGridOptions(), { rows: 3, columns: 6, min_rows: 1, min_columns: 3 });
+  });
+});
+
+describe('escaping', () => {
+  test('an entity state cannot add attributes', () => {
+    const card = makeCard({ items: [{ entity: 'sensor.s' }] }, makeHass({ 'sensor.s': 'x" onfocus="alert(1)' }));
+    assert.deepEqual(unexpectedAttrs(items(card)[0]), []);
+  });
+
+  test('a friendly name cannot add attributes', () => {
+    const card = makeCard(
+      { items: [{ entity: 'switch.a' }, { entity: 'switch.gone', name: 'g" onfocus="alert(1)' }] },
+      makeHass({ 'switch.a': stateObj('on', { friendly_name: 'n" onfocus="alert(1)' }) }),
+    );
+    for (const item of items(card)) assert.deepEqual(unexpectedAttrs(item), []);
+  });
+
+  test('config strings cannot add attributes or elements', () => {
+    const inj = '"><img src=x onerror=alert(1)>';
+    const card = makeCard(
+      { columns: `3${inj}`, font_size: inj, icon_size: inj, color_on: inj, items: [{ entity: `switch.a${inj}` }, { entity: 'switch.b', icon_on: inj }] },
+      makeHass({ [`switch.a${inj}`]: 'on', 'switch.b': 'on' }),
+    );
+    assert.equal(card.querySelectorAll('img').length, 0, 'injected <img> was rendered');
+  });
+
+  test('an escaped entity id still restores keyboard focus after a re-render', () => {
+    const id = 'switch.a"b';
+    const hass = makeHass({ [id]: 'on' });
+    const card = makeCard({ items: [{ entity: id }] }, hass);
+    items(card)[0].focus();
+    card.hass = makeHass({ [id]: 'off' });
+    assert.equal(card.ownerDocument.activeElement.dataset.entity, id);
   });
 });
