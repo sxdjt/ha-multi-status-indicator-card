@@ -8,7 +8,7 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 ## [Unreleased]
 
 ### Fixed
-- Tapping a `binary_sensor` no longer fails with "Failed to toggle": it called `binary_sensor.turn_on`/`turn_off`, which do not exist. Read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) now do nothing on tap.
+- Tapping a `binary_sensor` no longer fails with "Failed to toggle": it called `binary_sensor.turn_on`/`turn_off`, which do not exist. Read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`), and other entities whose state is not on/off, now open the more-info dialog on tap, Enter or Space.
 - Other on/off entities such as `group` are switched with `homeassistant.turn_on`/`turn_off`; `group.turn_off` does not exist.
 - A `media_player` that is paused, idle or in standby shows OFF, and a tap now calls `turn_on` to match; it called `turn_off`.
 - A numeric `name: 0` is shown as "0" on the card and in the editor; it fell back to the friendly name.
@@ -16,7 +16,7 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 - Visual editor: after a YAML edit, the fields and entity panels show the new config. The editor only drew its fields once, so it kept showing the old values.
 - Visual editor: an entity panel's heading follows the current entity and custom name. Changing the entity replaced a custom name in the heading, and clearing the name afterwards showed the old entity.
 - Holding Enter or Space toggles an item once; key auto-repeat toggled it again and again.
-- Screen readers no longer announce read-only items as "tap to toggle", and those items have no pressed state.
+- Screen readers announce read-only items as "tap for details" instead of "tap to toggle", and those items have no pressed state.
 
 ### Security
 - Entity states, friendly names and config values are escaped before they are written into the card's HTML. A state or name containing `"` could add attributes (including event handlers) to an item; config values (entity, icons, colors, sizes, columns) were inserted raw.

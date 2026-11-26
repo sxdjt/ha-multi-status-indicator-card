@@ -677,10 +677,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
            data-entity="${this._escapeHtml(item.entity)}"
            role="button"
            tabindex="0"
-           aria-label="${this._escapeHtml(name)}, ${this._escapeHtml(state)}${canToggle ? ', tap to toggle' : ''}"
+           aria-label="${this._escapeHtml(name)}, ${this._escapeHtml(state)}, ${canToggle ? 'tap to toggle' : 'tap for details'}"
            ${canToggle ? `aria-pressed="${isOn}"` : ''}
            aria-keyshortcuts="Shift+Enter"
-           title="${canToggle ? 'Tap to toggle • ' : ''}Long press or Shift+Enter for details">
+           title="${canToggle ? 'Tap to toggle • Long press or Shift+Enter for details' : 'Tap, long press or Shift+Enter for details'}">
         ${content}
       </div>
     `;
@@ -807,6 +807,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
       if (action) {
         await this._hass.callService(action.domain, action.service, { entity_id: entity });
+      } else {
+        // Nothing to toggle (read-only domain, or a state that is not on/off): a tap opens
+        // more-info, as HA's own tiles do, so the button always has an action
+        this._showMoreInfo(entity);
       }
     } catch (err) {
       this._showError(`Failed to toggle ${entity}: ${err.message}`);

@@ -76,7 +76,7 @@ Tapping an item calls a service based on the entity's domain:
 
 For any other domain whose state is exactly `on` or `off` (for example `group`, `siren`, `humidifier`), the card calls `homeassistant.turn_on` or `homeassistant.turn_off`.
 
-Tapping does nothing for read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) and for any other entity whose state is not `on`/`off`. Those items still show their state and open more-info on long-press, and screen readers do not announce them as toggles.
+For read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`) and any other entity whose state is not `on`/`off`, a tap opens the more-info dialog instead, as HA's own tiles do. Screen readers announce those items as "tap for details", not as toggles.
 
 ### When an item counts as ON
 
@@ -97,7 +97,7 @@ An entity that is missing, `unavailable` or `unknown` shows a muted alert icon a
 
 | Action                                | Result                 |
 | ------------------------------------- | ---------------------- |
-| Tap, click, Enter or Space            | Toggle the entity      |
+| Tap, click, Enter or Space            | Toggle the entity (more-info for read-only items) |
 | Long-press (0.5 s) or Shift+Enter     | Open more-info dialog  |
 
 ## Example Usage

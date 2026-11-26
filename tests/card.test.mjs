@@ -76,12 +76,20 @@ describe('interaction', () => {
   });
 
   // M1 (B8): binary_sensor has no turn_on/turn_off service
-  test('tapping a binary_sensor calls no service', async () => {
+  test('tapping a binary_sensor calls no service and opens more-info', async () => {
     const hass = makeHass({ 'binary_sensor.door': 'on' });
     const card = makeCard({ items: [{ entity: 'binary_sensor.door' }] }, hass);
     items(card)[0].click();
     await Promise.resolve();
     assert.deepEqual(hass.calls, []);
+    assert.deepEqual(card.events, [{ type: 'hass-more-info', detail: { entityId: 'binary_sensor.door' } }]);
+  });
+
+  test('Enter and Space on a read-only item open more-info', async () => {
+    const card = makeCard({ items: [{ entity: 'person.sam' }] }, makeHass({ 'person.sam': 'home' }));
+    for (const key of ['Enter', ' ']) items(card)[0].dispatchEvent(new window.KeyboardEvent('keydown', { key, bubbles: true }));
+    await Promise.resolve();
+    assert.equal(card.events.filter((e) => e.type === 'hass-more-info').length, 2);
   });
 
   // M1 (B8): read-only items must not announce an action that does nothing
@@ -92,7 +100,8 @@ describe('interaction', () => {
     );
     for (const item of items(card)) {
       assert.doesNotMatch(item.getAttribute('aria-label'), /toggle/i);
-      assert.doesNotMatch(item.getAttribute('title'), /toggle/i);
+      assert.match(item.getAttribute('aria-label'), /tap for details$/);
+      assert.equal(item.getAttribute('title'), 'Tap, long press or Shift+Enter for details');
     }
   });
 });
@@ -165,12 +174,13 @@ describe('fallback service', () => {
     assert.deepEqual(hass.calls[0], { domain: 'homeassistant', service: 'turn_on', data: { entity_id: 'siren.alarm' } });
   });
 
-  test('an entity whose state is not on/off calls nothing', async () => {
+  test('an entity whose state is not on/off calls nothing and opens more-info', async () => {
     const hass = makeHass({ 'vacuum.robbie': 'docked' });
     const card = makeCard({ items: [{ entity: 'vacuum.robbie' }] }, hass);
     items(card)[0].click();
     await Promise.resolve();
     assert.deepEqual(hass.calls, []);
+    assert.equal(card.events[0].type, 'hass-more-info');
     assert.doesNotMatch(items(card)[0].getAttribute('aria-label'), /toggle/);
   });
 
