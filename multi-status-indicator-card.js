@@ -743,6 +743,11 @@ class MultiStatusIndicatorCard extends HTMLElement {
     this._container.addEventListener('keydown', (e) => {
       const item = e.target.closest('.msic-item');
       if (!item || !item.dataset.entity) return;
+      // A held key auto-repeats keydown; act once per press
+      if (e.repeat) {
+        if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
+        return;
+      }
       if (e.key === 'Enter' && e.shiftKey) {
         e.preventDefault();
         this._showMoreInfo(item.dataset.entity);

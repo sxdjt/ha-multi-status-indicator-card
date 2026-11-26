@@ -204,3 +204,15 @@ describe('media_player', () => {
     assert.equal(hass.calls[0].service, 'turn_off');
   });
 });
+
+describe('keyboard', () => {
+  test('auto-repeated keydown is ignored', async () => {
+    const hass = makeHass({ 'switch.a': 'off' });
+    const card = makeCard({ items: [{ entity: 'switch.a' }] }, hass);
+    const item = items(card)[0];
+    item.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    item.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }));
+    await Promise.resolve();
+    assert.equal(hass.calls.length, 1);
+  });
+});
