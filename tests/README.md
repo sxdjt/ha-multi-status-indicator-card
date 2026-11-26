@@ -27,7 +27,17 @@ IMPORTANT: never pass a DOM node to `assert` (`assert.equal(el, null)`, `assert.
 npm run coverage
 ```
 
-The target is 100% function and branch coverage of `multi-status-indicator-card.js`.
+Every function and every branch in `multi-status-indicator-card.js` is covered (76/76 functions, 254/254 branches). Keep both at 100%: a change that adds a function or branch should add the test that covers it. For a per-line list of gaps, add `--test-reporter=lcov --test-reporter-destination=<file>` and look for `FNDA:0` and `BRDA:...,0` lines.
+
+## Files
+
+| File | Covers |
+|------|--------|
+| `card.test.mjs` | Registration, default rendering, empty state, unavailable items, name fallbacks, escaping (state, names, config values), fallback services and read-only domains, media_player, held keys, sizing |
+| `card-lifecycle.test.mjs` | Card picker (`getEntitySuggestion`, `getStubConfig`, `getConfigElement`), `setConfig`/`hass`/connect ordering, re-render only on watched entity changes, per-item overrides, relative-time hydration, ON rules per domain |
+| `card-interaction.test.mjs` | Service per domain, error notification, click, keyboard (Enter, Space, Shift+Enter, repeat), long-press with mocked timers |
+| `editor.test.mjs` | Title, color validation, Add Entity, numeric names, `setConfig` after the first render (YAML edits vs HA's echo), panel header |
+| `editor-fields.test.mjs` | Every card-level and per-item editor field: initial values, set and clear, show-last-changed tri-state, Remove and focus, `hass` propagation |
 
 ## Known issues
 

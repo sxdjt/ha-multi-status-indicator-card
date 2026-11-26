@@ -301,8 +301,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
   }
 
   render() {
-    if (!this.shadowRoot) return;
-
+    // The constructor always attaches the shadow root
     this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; }
