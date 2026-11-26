@@ -33,4 +33,4 @@ The target is 100% function and branch coverage of `multi-status-indicator-card.
 
 Record a known bug as a test with the `todo` option, describing the intended behavior. It runs and reports as `todo` without failing the suite. When a fix lands, remove the `todo` option so the test guards against regressions.
 
-Open `todo` tests: see `npm test` output.
+There are no open `todo` tests.

@@ -121,6 +121,16 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     this._fire();
   }
 
+  // Panel heading from the item's current config (not the one captured at render time):
+  // custom name, then the entity's friendly name, then the entity id
+  _panelHeader(index) {
+    const item = this._config.items[index] || {};
+    return (hasName(item.name) ? String(item.name) : '')
+      || this._hass?.states[item.entity]?.attributes?.friendly_name
+      || item.entity
+      || `Entity ${index + 1}`;
+  }
+
   _renderEntities() {
     const list = this.shadowRoot?.getElementById('entities-list');
     if (!list) return;
@@ -128,7 +138,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
     this._config.items.forEach((item, index) => {
       const panel = document.createElement('ha-expansion-panel');
       panel.outlined = true;
-      panel.header = (hasName(item.name) ? String(item.name) : '') || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+      panel.header = this._panelHeader(index);
 
       const content = document.createElement('div');
       content.className = 'panel-content';
@@ -145,7 +155,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       entityPicker.label = 'Entity';
       entityPicker.addEventListener('value-changed', (e) => {
         this._updateEntity(index, 'entity', e.detail.value);
-        panel.header = this._hass?.states[e.detail.value]?.attributes?.friendly_name || e.detail.value || `Entity ${index + 1}`;
+        panel.header = this._panelHeader(index);
       });
       entityDiv.appendChild(entityPicker);
       content.appendChild(entityDiv);
@@ -162,7 +172,7 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
       nameField.addEventListener('value-changed', (e) => {
         e.stopPropagation();
         this._updateEntity(index, 'name', e.detail.value);
-        panel.header = e.detail.value || this._hass?.states[item.entity]?.attributes?.friendly_name || item.entity || `Entity ${index + 1}`;
+        panel.header = this._panelHeader(index);
       });
       nameDiv.appendChild(nameField);
       content.appendChild(nameDiv);

@@ -67,3 +67,21 @@ describe('setConfig after the first render', () => {
     assert.ok(editor.shadowRoot.querySelector('#entities-list ha-expansion-panel') === panel, 'panel was rebuilt');
   });
 });
+
+describe('panel header', () => {
+  test('after changing the entity, clearing the name shows the new entity', () => {
+    const editor = makeEditor({ items: [{ entity: 'switch.old', name: 'Custom' }] });
+    const panel = editor.shadowRoot.querySelector('#entities-list ha-expansion-panel');
+    const [entityPicker, nameField] = panel.querySelectorAll('ha-selector');
+    fireValue(entityPicker, 'switch.new');
+    fireValue(nameField, '');
+    assert.equal(panel.header, 'switch.new');
+  });
+
+  test('changing the entity keeps a custom name in the header', () => {
+    const editor = makeEditor({ items: [{ entity: 'switch.old', name: 'Custom' }] });
+    const panel = editor.shadowRoot.querySelector('#entities-list ha-expansion-panel');
+    fireValue(panel.querySelectorAll('ha-selector')[0], 'switch.new');
+    assert.equal(panel.header, 'Custom');
+  });
+});
