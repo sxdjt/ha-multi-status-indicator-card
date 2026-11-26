@@ -93,7 +93,7 @@ describe('lifecycle', () => {
 
   test('getGridOptions and getCardSize before setConfig', () => {
     const card = document.createElement('multi-status-indicator-card');
-    assert.deepEqual(card.getGridOptions(), { rows: 1, columns: 6, min_rows: 1, min_columns: 3 });
+    assert.deepEqual(card.getGridOptions(), { rows: 'auto', columns: 6, min_columns: 3 });
     assert.equal(card.getCardSize(), 1);
   });
 });

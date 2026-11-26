@@ -22,7 +22,7 @@ describe('rendering', () => {
       makeHass({ 'switch.a': 'on', 'switch.b': 'off' }),
     );
     const grid = card.querySelector('.msic-grid');
-    assert.match(grid.getAttribute('style'), /repeat\(3, 1fr\)/);
+    assert.match(grid.getAttribute('style'), /repeat\(3, minmax\(0, 1fr\)\)/);
     assert.match(grid.getAttribute('style'), /font-size: 11px/);
     const [on, off] = items(card).map((i) => i.querySelector('ha-icon'));
     assert.equal(on.getAttribute('icon'), 'mdi:toggle-switch');
@@ -118,10 +118,6 @@ describe('sizing', () => {
     assert.equal(card.getCardSize(), 1);
   });
 
-  test('getGridOptions counts rows of valid items plus the title', () => {
-    const card = makeCard({ title: 'T', columns: 2, items: [{ entity: 'a.a' }, { entity: 'a.b' }, { entity: 'a.c' }, {}] });
-    assert.deepEqual(card.getGridOptions(), { rows: 3, columns: 6, min_rows: 1, min_columns: 3 });
-  });
 });
 
 describe('escaping', () => {
@@ -224,5 +220,30 @@ describe('keyboard', () => {
     item.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', repeat: true, bubbles: true }));
     await Promise.resolve();
     assert.equal(hass.calls.length, 1);
+  });
+});
+
+// Guide D7 (2026-11-26, found on the ha-test Variety page): the card must stay inside its slot
+describe('layout stays inside the card (D7)', () => {
+  const css = (card) => card.querySelector('style').textContent.replace(/\s+/g, ' ');
+  const rule = (card, sel) => (css(card).match(new RegExp(`\\${sel} \\{[^}]*\\}`)) || [''])[0];
+
+  test('columns can shrink below their content instead of pushing past the card', () => {
+    const card = makeCard({ columns: 8, items: [{ entity: 'switch.a' }] }, makeHass({ 'switch.a': 'on' }));
+    assert.match(card.querySelector('.msic-grid').getAttribute('style'), /repeat\(8, minmax\(0, 1fr\)\)/);
+    assert.match(rule(card, '.msic-item'), /min-width: 0;/);
+    assert.match(rule(card, '.msic-item'), /overflow: hidden;/);
+  });
+
+  test('long unbroken names wrap inside their cell', () => {
+    const card = makeCard({ items: [{ entity: 'switch.a' }] }, makeHass({ 'switch.a': 'on' }));
+    assert.match(rule(card, '.msic-name'), /overflow-wrap: anywhere;/);
+  });
+
+  test('the sections view sizes the card to its content, not a row estimate', () => {
+    // Wrapped names make the card taller than one row per line of items
+    const card = makeCard({ title: 'T', columns: 2, items: [{ entity: 'a.a' }, { entity: 'a.b' }, { entity: 'a.c' }, {}] });
+    assert.deepEqual(card.getGridOptions(), { rows: 'auto', columns: 6, min_columns: 3 });
+    assert.equal(card.getCardSize(), 3, 'masonry still gets the estimate');
   });
 });

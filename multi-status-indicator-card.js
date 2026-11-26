@@ -528,6 +528,10 @@ class MultiStatusIndicatorCard extends HTMLElement {
         cursor: pointer;
         transition: transform 0.1s ease-in-out, background-color 0.1s ease-in-out;
         background-color: transparent;
+        /* Columns are minmax(0, 1fr): many columns or a long name in a narrow slot
+           shrink the cell instead of pushing the grid past the card (guide D7) */
+        min-width: 0;
+        overflow: hidden;
       }
       .msic-item:hover {
         background-color: var(--ha-card-background, var(--card-background-color, rgba(128, 128, 128, 0.1)));
@@ -553,6 +557,8 @@ class MultiStatusIndicatorCard extends HTMLElement {
       }
       .msic-name {
         text-align: center;
+        /* An entity id used as the name has no spaces to break at */
+        overflow-wrap: anywhere;
       }
       .msic-time {
         font-size: 10px;
@@ -608,7 +614,7 @@ class MultiStatusIndicatorCard extends HTMLElement {
 
     const html = `
       ${title ? `<div class="msic-title">${this._escapeHtml(title)}</div>` : ''}
-      <div class="msic-grid" style="grid-template-columns: repeat(${this._escapeHtml(columns)}, 1fr); font-size: ${this._escapeHtml(font_size)};">
+      <div class="msic-grid" style="grid-template-columns: repeat(${this._escapeHtml(columns)}, minmax(0, 1fr)); font-size: ${this._escapeHtml(font_size)};">
         ${validItems.map(item => this._renderItem(item, hass, {
           icon_size, font_size, show_last_changed, color_on, color_off, name_position
         })).join('')}
@@ -886,24 +892,23 @@ class MultiStatusIndicatorCard extends HTMLElement {
   // Domains whose entities only report a state: a tap calls nothing
   static READ_ONLY_DOMAINS = ['binary_sensor', 'sensor', 'person', 'device_tracker', 'sun', 'weather', 'zone', 'event'];
 
-  // Masonry view height: same row count as getGridOptions (valid items only, plus the title)
+  // Masonry view height estimate: one unit per row of indicators (valid items only), plus
+  // one for the title. Masonry only balances columns with it, so an error cannot overlap
   getCardSize() {
-    return this.getGridOptions().rows;
-  }
-
-  // Sections view (grid layout) sizing. Derive the row count from the actual content so
-  // longer entity lists are not clipped: roughly one grid row per row of indicators, plus
-  // one for the title when present.
-  getGridOptions() {
     const validItemCount = (this._config?.items || []).filter(item => item && item.entity).length;
     const columns = this._config?.columns || 3;
     const indicatorRows = Math.max(1, Math.ceil(validItemCount / columns));
     const titleRows = this._config?.title ? 1 : 0;
+    return indicatorRows + titleRows;
+  }
 
+  // Sections view (grid layout) sizing. rows: 'auto' makes the card exactly as tall as its
+  // content. A row estimate ran short once long names wrapped, and the card below drew
+  // over this one (guide D7; same fix as heatmap #19 and canvas-gauge C1)
+  getGridOptions() {
     return {
-      rows: indicatorRows + titleRows,
+      rows: 'auto',
       columns: 6,
-      min_rows: 1,
       min_columns: 3,
     };
   }

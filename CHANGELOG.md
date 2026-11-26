@@ -17,6 +17,8 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 - Visual editor: an entity panel's heading follows the current entity and custom name. Changing the entity replaced a custom name in the heading, and clearing the name afterwards showed the old entity.
 - Holding Enter or Space toggles an item once; key auto-repeat toggled it again and again.
 - Screen readers announce read-only items as "tap for details" instead of "tap to toggle", and those items have no pressed state.
+- Many columns, or a long name with no spaces (such as an entity id), in a narrow card pushed the items past the card's edge and over the card beside it. Columns now shrink to fit and long names wrap.
+- Sections view: the card height was estimated from the number of items, so a card whose names wrap onto more lines ran over the card below. The card is now exactly as tall as its content (it can no longer be given a fixed height in the layout tab).
 
 ### Security
 - Entity states, friendly names and config values are escaped before they are written into the card's HTML. A state or name containing `"` could add attributes (including event handlers) to an item; config values (entity, icons, colors, sizes, columns) were inserted raw.
