@@ -807,7 +807,8 @@ class MultiStatusIndicatorCard extends HTMLElement {
       cover: 'toggle',
       lock: (state) => state === 'locked' ? 'unlock' : 'lock',
       climate: (state) => state === 'off' ? 'turn_on' : 'turn_off',
-      media_player: (state) => state === 'off' ? 'turn_on' : 'turn_off'
+      // Follows what the card shows (_isOn): paused/idle/standby show OFF, so a tap turns on
+      media_player: (state) => ['playing', 'on'].includes(state) ? 'turn_off' : 'turn_on'
     };
 
     let service = domainServices[domain];

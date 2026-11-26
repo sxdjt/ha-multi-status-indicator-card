@@ -72,7 +72,7 @@ Tapping an item calls a service based on the entity's domain:
 - `cover` - toggle (open/close)
 - `lock` - lock/unlock
 - `climate` - turn_on/turn_off
-- `media_player` - turn_on/turn_off
+- `media_player` - turn_off when shown ON (`playing`, `on`), otherwise turn_on
 
 For any other domain whose state is exactly `on` or `off` (for example `group`, `siren`, `humidifier`), the card calls `homeassistant.turn_on` or `homeassistant.turn_off`.
 

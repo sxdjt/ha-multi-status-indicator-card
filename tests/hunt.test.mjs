@@ -9,17 +9,6 @@ afterEach(cleanup);
 const ITEM_ATTRS = ['class', 'data-entity', 'role', 'tabindex', 'aria-label', 'aria-pressed', 'aria-disabled', 'aria-keyshortcuts', 'title'];
 const unexpectedAttrs = (el) => [...el.attributes].map((a) => a.name).filter((n) => !ITEM_ATTRS.includes(n));
 
-describe('M5 (B7): media_player tap matches what is shown', () => {
-  test('a paused player shows OFF, so a tap turns it on', { todo: 'shown OFF but tap calls turn_off' }, async () => {
-    const hass = makeHass({ 'media_player.tv': 'paused' });
-    const card = makeCard({ items: [{ entity: 'media_player.tv' }] }, hass);
-    assert.equal(items(card)[0].getAttribute('aria-pressed'), 'false');
-    items(card)[0].click();
-    await Promise.resolve();
-    assert.equal(hass.calls[0].service, 'turn_on');
-  });
-});
-
 describe('M6 (B10): editor follows setConfig after the first render', () => {
   test('a YAML edit shows in the visual editor', { todo: 'setConfig renders only once, fields stay stale' }, () => {
     const editor = makeEditor({ title: 'Old', items: [{ entity: 'switch.a' }] });

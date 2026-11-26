@@ -174,3 +174,23 @@ describe('fallback service', () => {
     assert.equal(readOnly.hasAttribute('aria-pressed'), false);
   });
 });
+
+describe('media_player', () => {
+  test('a paused player shows OFF, so a tap turns it on', async () => {
+    const hass = makeHass({ 'media_player.tv': 'paused' });
+    const card = makeCard({ items: [{ entity: 'media_player.tv' }] }, hass);
+    assert.equal(items(card)[0].getAttribute('aria-pressed'), 'false');
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.equal(hass.calls[0].service, 'turn_on');
+  });
+
+  test('a playing player shows ON and a tap turns it off', async () => {
+    const hass = makeHass({ 'media_player.tv': 'playing' });
+    const card = makeCard({ items: [{ entity: 'media_player.tv' }] }, hass);
+    assert.equal(items(card)[0].getAttribute('aria-pressed'), 'true');
+    items(card)[0].click();
+    await Promise.resolve();
+    assert.equal(hass.calls[0].service, 'turn_off');
+  });
+});
