@@ -99,9 +99,14 @@ describe('interaction', () => {
 
 describe('sizing', () => {
   // M3: getCardSize should agree with getGridOptions
-  test('getCardSize ignores items without an entity and counts the title', { todo: 'counts every item, ignores the title' }, () => {
+  test('getCardSize ignores items without an entity and counts the title', () => {
     const card = makeCard({ title: 'T', columns: 3, items: [{ entity: 'switch.a' }, { name: 'blank' }, {}, {}] });
     assert.equal(card.getCardSize(), 2);
+  });
+
+  test('an empty card is one row tall', () => {
+    const card = makeCard({ items: [] });
+    assert.equal(card.getCardSize(), 1);
   });
 
   test('getGridOptions counts rows of valid items plus the title', () => {

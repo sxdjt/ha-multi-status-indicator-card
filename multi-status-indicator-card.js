@@ -863,8 +863,9 @@ class MultiStatusIndicatorCard extends HTMLElement {
   // Domains whose entities only report a state: a tap calls nothing
   static READ_ONLY_DOMAINS = ['binary_sensor', 'sensor', 'person', 'device_tracker', 'sun', 'weather', 'zone', 'event'];
 
+  // Masonry view height: same row count as getGridOptions (valid items only, plus the title)
   getCardSize() {
-    return Math.ceil((this._config?.items?.length || 0) / (this._config?.columns || 3));
+    return this.getGridOptions().rows;
   }
 
   // Sections view (grid layout) sizing. Derive the row count from the actual content so
