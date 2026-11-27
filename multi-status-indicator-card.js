@@ -25,7 +25,7 @@ window.customCards.push({
 const hasName = (name) => name != null && name !== '';
 
 console.info(
-  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.12 `,
+  `%c MULTI-STATUS-INDICATOR-CARD %c 2026.11.26-beta.1 `,
   'color: black; background: #F2720C; font-weight: 600;',
   'color: black; background: #00a5c9; font-weight: 600;'
 );

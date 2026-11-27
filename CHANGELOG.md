@@ -7,6 +7,8 @@ and this project uses [CalVer](https://calver.org/) (`YYYY.M.D`) versioning.
 
 ## [Unreleased]
 
+## [2026.11.26-beta.1] - 2026-11-26 (pre-release)
+
 ### Fixed
 - Visual editor: the Icon (On) / Icon (Off) pickers no longer run past the editor and make it scroll sideways. Fields in a row now wrap onto their own lines when the editor is narrow.
 - Tapping a `binary_sensor` no longer fails with "Failed to toggle": it called `binary_sensor.turn_on`/`turn_off`, which do not exist. Read-only domains (`binary_sensor`, `sensor`, `person`, `device_tracker`, `sun`, `weather`, `zone`, `event`), and other entities whose state is not on/off, now open the more-info dialog on tap, Enter or Space.
