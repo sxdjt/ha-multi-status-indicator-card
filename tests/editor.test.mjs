@@ -85,3 +85,15 @@ describe('panel header', () => {
     assert.equal(panel.header, 'Custom');
   });
 });
+
+// Found on ha-test (2026-11-26): the Icon (On) / Icon (Off) pickers sit in one .row; flex
+// items do not shrink below their content, so the row ran 62px past the editor column
+// (116px with the guide's text-spacing check) and the editor scrolled sideways
+describe('editor layout', () => {
+  test('a field row wraps and its fields can shrink (no sideways scroll in a narrow editor)', () => {
+    const editor = makeEditor({ items: [{ entity: 'cover.a' }] });
+    const css = editor.shadowRoot.querySelector('style').textContent.replace(/\s+/g, ' ');
+    assert.match(css, /\.row \{[^}]*flex-wrap: wrap/);
+    assert.match(css, /\.row > \* \{[^}]*min-width: 0/);
+  });
+});

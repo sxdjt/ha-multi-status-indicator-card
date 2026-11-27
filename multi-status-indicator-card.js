@@ -309,8 +309,11 @@ class MultiStatusIndicatorCardEditor extends HTMLElement {
         .field ha-selector { display: block; width: 100%; }
         ha-expansion-panel { display: block; margin-bottom: 8px; }
         .panel-content { padding: 16px; }
-        .row { display: flex; gap: 16px; }
-        .row > * { flex: 1; }
+        /* Fields share a row while each gets 200px (an icon picker needs about that to show
+           its value); below that they wrap. min-width: 0 lets a field shrink: the icon
+           picker's own minimum ran the row past the editor column, which scrolled sideways */
+        .row { display: flex; flex-wrap: wrap; gap: 16px; }
+        .row > * { flex: 1 1 200px; min-width: 0; }
         .toggle-row { display: flex; justify-content: space-between; align-items: center; min-height: 56px; }
         ha-button { margin-top: 8px; }
         /* Text stays primary color for 4.5:1; red only on non-text parts, which need 3:1 */
